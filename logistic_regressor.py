@@ -1,6 +1,7 @@
 import numpy as np
 
 from classifier import Classifier
+import nn
 
 
 class LogistiscRegressor(Classifier):
@@ -49,3 +50,9 @@ class LogistiscRegressor(Classifier):
     else:
       c = c_prior(n_classes)
     self.bs.append(c)
+
+  def infer(self, image):
+    x = np.reshape(image, [1, -1])
+    for W, b in zip(self.Ws, self.bs):
+      x = np.matmul(x, W) + b
+    return nn.softmax(x)
