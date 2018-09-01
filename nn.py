@@ -13,3 +13,10 @@ def sigmoid(x):
   else:
     exp_x = np.exp(x)
     return exp_x / (1 + exp_x)
+
+
+def one_hot(indices, depth, dtype=np.int32):
+  onehot = np.zeros((len(indices), depth), dtype=dtype)
+  for i, index in enumerate(indices):
+    onehot[i, index] = 1
+  return onehot
