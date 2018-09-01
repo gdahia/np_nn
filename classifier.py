@@ -7,7 +7,16 @@ class Classifier:
                logits_prior=None):
     pass
 
-  def train(self, images, labels):
+  def _forward(self, images, labels):
+    pass
+
+  def _backward(self):
+    pass
+
+  def _update(self):
+    pass
+
+  def train(self, images, labels, learning_rate):
     pass
 
   def infer(self, image):
