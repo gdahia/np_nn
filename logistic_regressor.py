@@ -72,8 +72,8 @@ class LogisticRegressor(Classifier):
     logits = xs
     labels = np.array(labels)
     # TODO: compare numerically both forms of softmax using tf implementation
-    # loss = np.mean(-np.mean(labels * (logits - np.log(np.sum(np.exp(logits)))), axis=1))
-    loss = np.mean(-np.mean(labels * np.log(nn.softmax(logits)), axis=1))
+    # loss = np.mean(-np.sum(labels * (logits - np.log(np.sum(np.exp(logits)))), axis=1))
+    loss = np.mean(-np.sum(labels * np.log(nn.softmax(logits)), axis=1))
     nodes.append(loss)
 
     return nodes
