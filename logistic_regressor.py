@@ -51,8 +51,8 @@ class LogisticRegressor(Classifier):
       c = c_prior(n_classes)
     self.bs.append(c)
 
-  def infer(self, image):
-    x = np.reshape(image, [1, -1])
+  def infer(self, x):
+    x = np.reshape(x, [1, -1])
     for W, b in zip(self.Ws, self.bs):
       x = np.matmul(x, W) + b
     return nn.softmax(x)

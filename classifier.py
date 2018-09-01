@@ -7,7 +7,7 @@ class Classifier(ABC):
     pass
 
   @abstractmethod
-  def _forward(self, images, labels):
+  def _forward(self, inputs, labels):
     pass
 
   @abstractmethod
@@ -18,5 +18,5 @@ class Classifier(ABC):
   def _update(self):
     pass
 
-  def train(self, images, labels, learning_rate):
+  def train(self, inputs, labels, learning_rate):
     pass
