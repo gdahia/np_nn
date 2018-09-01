@@ -1,7 +1,8 @@
 import numpy as np
 
-from classifier import Classifier
 import nn
+
+from classifier import Classifier
 
 
 class LogisticRegressor(Classifier):
