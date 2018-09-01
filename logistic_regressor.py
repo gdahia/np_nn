@@ -10,7 +10,7 @@ class LogistiscRegressor(Classifier):
                input_dims,
                W_prior=None,
                b_prior=None,
-               logits_prior=None):
+               c_prior=None):
     # trick for using last units for shape
     prev_dims = input_dims
 
@@ -34,3 +34,18 @@ class LogistiscRegressor(Classifier):
       self.bs.append(b)
 
       prev_dims = units
+
+    # classification layer
+    W_shape = (prev_dims, n_classes)
+    if W_prior is None:
+      W = np.random.normal(size=W_shape)
+    else:
+      W = W_prior(W_shape)
+    self.Ws.append(W)
+
+    # initialize 'c'
+    if c_prior is None:
+      c = np.ones(n_classes, dtype=np.float32) / n_classes
+    else:
+      c = c_prior(n_classes)
+    self.bs.append(c)
