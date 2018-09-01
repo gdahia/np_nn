@@ -4,7 +4,7 @@ from classifier import Classifier
 import nn
 
 
-class LogistiscRegressor(Classifier):
+class LogisticRegressor(Classifier):
   def __init__(self,
                units_ls,
                n_classes,
