@@ -56,3 +56,29 @@ class LogisticRegressor(Classifier):
     for W, b in zip(self.Ws, self.bs):
       x = np.matmul(x, W) + b
     return nn.softmax(x)
+
+  def _forward(self, inputs, labels):
+    # flatten 'inputs'
+    xs = np.reshape(inputs, (len(inputs), -1))
+
+    # store every node in forward pass
+    nodes = []
+    for W, b in zip(self.Ws, self.bs):
+      xs = np.matmul(xs, W) + b
+      nodes.append(xs)
+
+    # compute loss
+    logits = xs
+    labels = np.array(labels)
+    # TODO: compare numerically both forms of softmax using tf implementation
+    # loss = np.mean(-np.mean(labels * (logits - np.log(np.sum(np.exp(logits)))), axis=1))
+    loss = np.mean(-np.mean(labels * np.log(nn.softmax(logits)), axis=1))
+    nodes.append(loss)
+
+    return nodes
+
+  def _backward(self):
+    pass
+
+  def _update(self):
+    pass
