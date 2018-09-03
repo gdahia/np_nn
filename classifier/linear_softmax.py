@@ -57,7 +57,7 @@ class LinearSoftmax(Classifier):
     self.bs.append(c)
 
   def infer(self, x):
-    x = np.reshape(x, (1, -1))
+    x = np.reshape(x, (-1, self.Ws[0].shape[0]))
     for W, b in zip(self.Ws, self.bs):
       x = np.matmul(x, W) + b
     return nn.softmax(x)
