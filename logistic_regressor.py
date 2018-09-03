@@ -23,7 +23,9 @@ class LogisticRegressor(Classifier):
       # initialize 'W's
       W_shape = (prev_dims, units)
       if W_prior is None:
-        W = np.random.normal(size=W_shape)
+        # xavier initialization
+        val = 6 / np.sqrt(prev_dims + units)
+        W = np.random.uniform(low=-val, high=val, size=W_shape)
       else:
         W = W_prior(W_shape)
       self.Ws.append(W)
@@ -40,7 +42,9 @@ class LogisticRegressor(Classifier):
     # classification layer
     W_shape = (prev_dims, n_classes)
     if W_prior is None:
-      W = np.random.normal(size=W_shape)
+      # xavier initialization
+      val = 6 / np.sqrt(prev_dims + n_classes)
+      W = np.random.uniform(low=-val, high=val, size=W_shape)
     else:
       W = W_prior(W_shape)
     self.Ws.append(W)
