@@ -79,8 +79,26 @@ class LogisticRegressor(Classifier):
 
     return activations, loss
 
-  def _backward(self):
-    pass
+  def _backward(self, activations, labels):
+    # compute gradient wrt to softmax
+    # TODO: derive if means can be computed when each gradient is ready to perform faster calculations
+    # grad = np.mean(activations[-1] - labels, 0)
+    grad = activations[-1] - labels
 
-  def _update(self):
-    pass
+    # compute gradients with backpropagation
+    grads = []
+    for i in reversed(range(len(activations[:-2]))):
+      # compute and store bias gradient
+      db = np.mean(grad, 0)
+      grads.append(db)
+
+      # compute and store weights gradient
+      dW = np.matmul(
+          np.expand_dims(activations[i], -1), np.expand_dims(grad, 1))
+      dW = np.mean(dW, 0)
+      grads.append(dW)
+
+      # continue backprop
+      grad = np.matmul(grad, self.Ws[i].T)
+
+    return grads
