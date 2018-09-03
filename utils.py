@@ -28,3 +28,26 @@ def load_test_data(path, image_dtype=np.float32):
     images.append(image)
 
   return np.array(images, dtype=image_dtype)
+
+
+def shuffle(instances, labels):
+  perm = np.random.permutation(len(instances))
+  instances = np.array(instances)[perm]
+  labels = np.array(labels)[perm]
+
+  return instances, labels
+
+
+def split(instances, labels, split):
+  # compute split point
+  split_point = np.round(len(instances) * split)
+
+  # split instances
+  train_instances = instances[:split_point]
+  val_instances = instances[split_point:]
+
+  # split labels
+  train_labels = labels[:split_point]
+  val_labels = labels[split_point:]
+
+  return (train_instances, train_labels), (val_instances, val_labels)
