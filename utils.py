@@ -51,3 +51,22 @@ def split(instances, labels, split):
   val_labels = labels[split_point:]
 
   return (train_instances, train_labels), (val_instances, val_labels)
+
+
+def dataset_exists(index):
+  return os.path.exists(dataset_path(index))
+
+
+def dataset_path(index):
+  dataset_path = os.path.join('data', 'data_part{}'.format(index))
+  return dataset_path
+
+
+def download_and_extract_dataset(index):
+  import urllib.request
+  import tarfile
+
+  url = 'https://maups.github.io/tcv3/data_part{}.tar.bz2'.format(index)
+  filename, _ = urllib.request.urlretrieve(url)
+  tar = tarfile.open(name=filename)
+  tar.extractall(path='data')
