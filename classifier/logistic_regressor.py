@@ -2,7 +2,7 @@ import numpy as np
 
 import nn
 
-from classifier import Classifier
+from classifier.classifier import Classifier
 
 
 class LogisticRegressor(Classifier):
