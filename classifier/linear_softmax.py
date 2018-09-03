@@ -5,7 +5,7 @@ import nn
 from classifier.classifier import Classifier
 
 
-class LogisticRegressor(Classifier):
+class LinearSoftmax(Classifier):
   def __init__(self,
                units_ls,
                n_classes,

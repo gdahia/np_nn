@@ -1,2 +1,2 @@
 from classifier.classifier import Classifier
-from classifier.logistic_regressor import LogisticRegressor
+from classifier.linear_softmax import LinearSoftmax
