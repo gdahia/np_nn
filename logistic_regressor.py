@@ -102,3 +102,10 @@ class LogisticRegressor(Classifier):
       grad = np.matmul(grad, self.Ws[i].T)
 
     return grads
+
+  def _update(self, grads, learning_rate):
+    for i, grad in enumerate(reversed(grads)):
+      if i % 2 == 0:
+        self.Ws[i // 2] -= learning_rate * grad
+      else:
+        self.bs[i // 2] -= learning_rate * grad
