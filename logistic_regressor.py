@@ -66,18 +66,18 @@ class LogisticRegressor(Classifier):
     # flatten 'inputs'
     xs = np.reshape(inputs, (len(inputs), -1))
 
-    # store every node in forward pass
-    nodes = []
+    # store every activation in forward pass
+    activations = [xs]
     for W, b in zip(self.Ws, self.bs):
       xs = np.matmul(xs, W) + b
-      nodes.append(xs)
+      activations.append(xs)
 
     # compute loss
+    activations.append(nn.softmax(xs))
     loss = np.mean(
         nn.softmax_cross_entropy_with_logits(labels=labels, logits=xs))
-    nodes.append(loss)
 
-    return nodes
+    return activations, loss
 
   def _backward(self):
     pass
