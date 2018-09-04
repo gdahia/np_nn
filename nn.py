@@ -15,14 +15,20 @@ def sigmoid(x):
     return exp_x / (1 + exp_x)
 
 
-def softmax_cross_entropy_with_logits(labels, logits):
+def softmax_cross_entropy_with_logits(labels, logits, axis=None):
   # force arguments into np.array format
   labels = np.array(labels)
   logits = np.array(logits)
 
-  # TODO: compare numerically both forms of softmax using tf implementation
-  # cross_entropy = -np.sum(labels * (logits - np.log(np.sum(np.exp(logits)))), axis=1)
-  cross_entropy = -np.sum(labels * np.log(softmax(logits)), axis=1)
+  # compute like tensorflow implementation:
+  # https://github.com/tensorflow/tensorflow/blob/3e00e39c17124c9945fbad04a551a39ab4144935/tensorflow/core/kernels/xent_op.h#L110-L111
+  cross_entropy = -np.sum(
+      labels *
+      (logits - np.log(np.sum(np.exp(logits), axis=axis, keepdims=True))),
+      axis=axis,
+      keepdims=True)
+
+  return cross_entropy
 
 
 def cross_entropy(probs, preds, axis=None):
