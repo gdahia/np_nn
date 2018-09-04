@@ -26,7 +26,12 @@ def main():
 
   # create model
   print('Initializing model...')
-  model = models.LinearSoftmax([], len(data.labels), np.prod(data.input_shape))
+  model = models.Feedforward(
+      units_ls=[],
+      activation_fns=[],
+      activation_dfns=[],
+      n_classes=len(data.labels),
+      input_dims=np.prod(data.input_shape))
   print('Done')
 
   # initial learning rate
