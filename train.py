@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 
 import utils
+import dataset
 
 FLAGS = None
 
@@ -12,6 +13,9 @@ def main():
     print('Donwloading and extracting dataset {}...'.format(FLAGS.dataset))
     utils.download_and_extract_dataset(FLAGS.dataset)
     print('Done')
+
+  # load dataset
+  data = dataset.Handler(utils.dataset_path(FLAGS.dataset), 0.8)
 
 
 if __name__ == '__main__':
