@@ -25,8 +25,6 @@ def main():
   print('Done')
 
   # create classifier
-  # TODO: take classifier as command line argument
-  # or rename this file to train/linear_softmax.py
   print('Initializing model...')
   model = classifier.LinearSoftmax([], len(data.labels),
                                    np.prod(data.input_shape))
