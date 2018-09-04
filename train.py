@@ -2,7 +2,6 @@ import os
 import argparse
 import numpy as np
 import copy
-import pickle
 
 import utils
 import nn
@@ -78,6 +77,8 @@ def main():
 
   # save model
   if FLAGS.save_path is not None:
+    import pickle
+
     print('Saving model to {}...'.format(FLAGS.save_path))
 
     # create directory if does not exist
