@@ -2,10 +2,10 @@ import numpy as np
 
 import nn
 
-from classifier.classifier import Classifier
+from models.neural_net import NeuralNet
 
 
-class LinearSoftmax(Classifier):
+class LinearSoftmax(NeuralNet):
   def __init__(self,
                units_ls,
                n_classes,

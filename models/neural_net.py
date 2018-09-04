@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Classifier(ABC):
+class NeuralNet(ABC):
   @abstractmethod
   def infer(self, x):
     pass

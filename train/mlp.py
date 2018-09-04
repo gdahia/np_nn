@@ -5,7 +5,7 @@ import copy
 
 import utils
 import nn
-import classifier
+import models
 import dataset
 import validate
 
@@ -24,9 +24,9 @@ def main():
   data = dataset.Handler(utils.dataset_path(FLAGS.dataset), 0.8)
   print('Done')
 
-  # create classifier
+  # create model
   print('Initializing model...')
-  model = classifier.Feedforward(
+  model = models.Feedforward(
       units_ls=[500, 150],
       activation_fns=[nn.relu for _ in range(2)],
       activation_dfns=[nn.drelu for _ in range(2)],

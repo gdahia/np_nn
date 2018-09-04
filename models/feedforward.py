@@ -2,10 +2,10 @@ import numpy as np
 
 import nn
 
-from classifier.classifier import Classifier
+from models.neural_net import NeuralNet
 
 
-class Feedforward(Classifier):
+class Feedforward(NeuralNet):
   def __init__(self,
                units_ls,
                activation_fns,
