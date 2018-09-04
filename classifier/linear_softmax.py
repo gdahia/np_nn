@@ -60,7 +60,7 @@ class LinearSoftmax(Classifier):
     x = np.reshape(x, (-1, self.Ws[0].shape[0]))
     for W, b in zip(self.Ws, self.bs):
       x = np.matmul(x, W) + b
-    return nn.softmax(x)
+    return nn.softmax(x, axis=1)
 
   def _forward(self, inputs, labels):
     # flatten 'inputs'
@@ -72,10 +72,12 @@ class LinearSoftmax(Classifier):
       xs = np.matmul(xs, W) + b
       activations.append(xs)
 
+    # compute predictions
+    preds = nn.softmax(xs, axis=1)
+    activations.append(preds)
+
     # compute loss
-    activations.append(nn.softmax(xs))
-    loss = np.mean(
-        nn.softmax_cross_entropy_with_logits(labels=labels, logits=xs))
+    loss = np.mean(nn.cross_entropy(probs=labels, preds=preds, axis=1))
 
     return activations, loss
 
