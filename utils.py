@@ -30,6 +30,12 @@ def load_test_data(path, image_dtype=np.float32):
   return np.array(images, dtype=image_dtype)
 
 
+def labels2int(labels):
+  label2int = {label: i for i, label in enumerate(np.unique(labels))}
+  labels = np.array([label2int[label] for label in labels])
+  return labels
+
+
 def shuffle(instances, labels):
   perm = np.random.permutation(len(instances))
   instances = np.array(instances)[perm]

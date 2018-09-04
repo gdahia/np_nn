@@ -4,49 +4,135 @@ import numpy as np
 import utils
 
 
-class Dataset:
-  def __init__(self, path, split, shuffle=True):
+class _LabeledDataset:
+  def __init__(self, images, labels, shuffle):
     # initialize internal resources
-    self._epochs = 0
+    self.epochs = 0
     self._cursor = 0
-    self._shuffle = shuffle
+    self._shuffle_flag = shuffle
+    self._n_examples = len(images)
 
-    # load training data
-    train_path = os.path.join(path, 'train')
-    images, labels = utils.load_train_data(train_path)
-
-    # split into train/val
-    images, labels = utils.shuffle(images, labels)
-    train, val = self._split(images, labels)
-    self._train_images, self._train_labels = train
-    self._val_images, self._val_labels = val
+    # capture images and labels
+    self._images = images
+    self._labels = labels
 
     # initial shuffle
     if shuffle:
       self._shuffle()
 
-    # load test data
-    test_path = os.path.join(path, 'test')
-    self._test_images = utils.load_test_data(test_path)
-
   def next_batch(self, size, incomplete=False):
     # sample data
-    batch_images = self._train_images[self._cursor:self._cursor + size]
-    batch_labels = self._train_labels[self._cursor:self._cursor + size]
+    batch_images = self._images[self._cursor:self._cursor + size]
+    batch_labels = self._labels[self._cursor:self._cursor + size]
 
-    # fill remainder of batch in next epoch
-    if size + self._cursor > len(self._train_images):
+    if size + self._cursor < self._n_examples:
+      self._cursor += size
+    else:
+      # epoch completed
+      self.epochs += 1
+
       # shuffle
-      if self._shuffle:
+      if self._shuffle_flag:
         self._shuffle()
 
-      rem_images = self._train_images[:size - len(batch_images)]
-      rem_labels = self._train_labels[:size - len(batch_labels)]
-      batch_images = np.concat([batch_images, rem_images])
-      batch_labels = np.concat([batch_labels, rem_labels])
+      # return incomplete batches
+      if incomplete:
+        self._cursor = 0
+        return batch_images, batch_labels
+
+      # update cursor
+      rem = size - len(batch_images)
+      self._cursor = rem
+
+      # fill remainder of batch in next epoch
+      rem_images = self._images[:rem]
+      rem_labels = self._labels[:rem]
+      batch_images = np.concatenate([batch_images, rem_images], axis=0)
+      batch_labels = np.concatenate([batch_labels, rem_labels], axis=0)
 
     return batch_images, batch_labels
 
   def _shuffle(self):
-    shuffled = utils.shuffle(self._train_images, self._train_labels)
-    self._train_images, self._train_labels = shuffled
+    self._images, self._labels = utils.shuffle(self._images, self._labels)
+
+
+class _UnlabeledDataset:
+  def __init__(self, images, shuffle):
+    # initialize internal resources
+    self.epochs = 0
+    self._cursor = 0
+    self._shuffle_flag = shuffle
+    self._n_examples = len(images)
+    self.input_shape = np.shape(images)
+
+    # capture images
+    self._images = images
+
+    # initial shuffle
+    if shuffle:
+      self._shuffle()
+
+  def next_batch(self, size, incomplete=False):
+    # sample data
+    batch_images = self._images[self._cursor:self._cursor + size]
+
+    if size + self._cursor < self._n_examples:
+      self._cursor += size
+    else:
+      # epoch completed
+      self.epochs += 1
+
+      # shuffle
+      if self._shuffle_flag:
+        self._shuffle()
+
+      # return incomplete batches
+      if incomplete:
+        self._cursor = 0
+        return batch_images
+
+      # update cursor
+      rem = size - len(batch_images)
+      self._cursor = rem
+
+      # fill remainder of batch in next epoch
+      rem_images = self._images[:rem]
+      batch_images = np.concatenate([batch_images, rem_images], axis=0)
+
+    return batch_images
+
+  def _shuffle(self):
+    self._images = np.random.permutation(self._images)
+
+
+class Handler:
+  def __init__(self, path, split, shuffle=True):
+    # load training data
+    train_path = os.path.join(path, 'train')
+    images, labels = utils.load_train_data(train_path)
+
+    # dataset general info
+    self.input_shape = np.shape(images)[1:]
+    self.labels = {i: label for i, label in enumerate(np.unique(labels))}
+
+    # convert labels to integers
+    labels = utils.labels2int(labels)
+
+    # split into train/val
+    images, labels = utils.shuffle(images, labels)
+    train, val = utils.split(images, labels, split)
+    train_images, train_labels = train
+    val_images, val_labels = val
+
+    # load test data
+    test_path = os.path.join(path, 'test')
+    test_images = utils.load_test_data(test_path)
+
+    # train dataset
+    self.train = _LabeledDataset(train_images, train_labels, shuffle=shuffle)
+
+    # validation dataset
+    self.val = _LabeledDataset(val_images, val_labels, shuffle=False)
+
+    # test dataset
+    self.test = _UnlabeledDataset(test_images, shuffle=False)
