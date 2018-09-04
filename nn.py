@@ -1,6 +1,10 @@
 import numpy as np
 
 
+def relu(x):
+  return np.maximum(x, 0)
+
+
 def softmax(x, axis=None):
   x_ = x - np.max(x, axis=axis, keepdims=True)
   exp_x = np.exp(x_)
