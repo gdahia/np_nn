@@ -18,18 +18,24 @@ def main():
     print('Done')
 
   # load dataset
+  print('Loading dataset...')
   data = dataset.Handler(utils.dataset_path(FLAGS.dataset), 0.8)
+  print('Done')
 
   # create classifier
   # TODO: take classifier as command line argument
+  # or rename this file to train/linear_softmax.py
+  print('Initializing model...')
   model = classifier.LinearSoftmax([], len(data.labels),
                                    np.prod(data.input_shape))
+  print('Done')
 
   # initial learning rate
   learning_rate = nn.linear_decay(FLAGS.learning_rate,
                                   FLAGS.learning_rate / 100, 5000)
 
   # train
+  print('Training...')
   for step in range(1, FLAGS.steps + 1):
     # sample batch
     images, labels = data.train.next_batch(FLAGS.batch_size)
@@ -48,6 +54,8 @@ def main():
       print('Accuracy = {}'.format(accuracy))
 
       #TODO: add early stopping
+
+  print('Done')
 
 
 if __name__ == '__main__':
