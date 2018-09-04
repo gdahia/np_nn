@@ -95,7 +95,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
       '--dataset', required=True, type=int, help='index of dataset to use')
-  parser.add_argument('--batch_size', default=32, type=int, help='batch size')
+  parser.add_argument('--batch_size', default=16, type=int, help='batch size')
   parser.add_argument(
       '--learning_rate',
       default=1e-1,
