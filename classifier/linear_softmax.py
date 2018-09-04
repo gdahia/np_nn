@@ -17,8 +17,8 @@ class LinearSoftmax(Classifier):
     prev_dims = input_dims
 
     # initialize variables
-    self.Ws = []
-    self.bs = []
+    self._Ws = []
+    self._bs = []
     for units in units_ls:
       # initialize 'W's
       W_shape = (prev_dims, units)
@@ -28,14 +28,14 @@ class LinearSoftmax(Classifier):
         W = np.random.uniform(low=-val, high=val, size=W_shape)
       else:
         W = W_prior(W_shape)
-      self.Ws.append(W)
+      self._Ws.append(W)
 
       # initialize 'b's
       if b_prior is None:
         b = np.zeros(units)
       else:
         b = b_prior(units)
-      self.bs.append(b)
+      self._bs.append(b)
 
       prev_dims = units
 
@@ -47,18 +47,18 @@ class LinearSoftmax(Classifier):
       W = np.random.uniform(low=-val, high=val, size=W_shape)
     else:
       W = W_prior(W_shape)
-    self.Ws.append(W)
+    self._Ws.append(W)
 
     # initialize 'c'
     if c_prior is None:
       c = np.ones(n_classes, dtype=np.float32) / n_classes
     else:
       c = c_prior(n_classes)
-    self.bs.append(c)
+    self._bs.append(c)
 
   def infer(self, x):
-    x = np.reshape(x, (-1, self.Ws[0].shape[0]))
-    for W, b in zip(self.Ws, self.bs):
+    x = np.reshape(x, (-1, self._Ws[0].shape[0]))
+    for W, b in zip(self._Ws, self._bs):
       x = np.matmul(x, W) + b
     return nn.softmax(x, axis=1)
 
@@ -68,7 +68,7 @@ class LinearSoftmax(Classifier):
 
     # store every activation in forward pass
     activations = [xs]
-    for W, b in zip(self.Ws, self.bs):
+    for W, b in zip(self._Ws, self._bs):
       xs = np.matmul(xs, W) + b
       activations.append(xs)
 
@@ -101,13 +101,13 @@ class LinearSoftmax(Classifier):
       grads.append(dW)
 
       # continue backprop
-      grad = np.matmul(grad, self.Ws[i].T)
+      grad = np.matmul(grad, self._Ws[i].T)
 
     return grads
 
   def _update(self, grads, learning_rate):
     for i, grad in enumerate(reversed(grads)):
       if i % 2 == 0:
-        self.Ws[i // 2] -= learning_rate * grad
+        self._Ws[i // 2] -= learning_rate * grad
       else:
-        self.bs[i // 2] -= learning_rate * grad
+        self._bs[i // 2] -= learning_rate * grad
