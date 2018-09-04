@@ -1,5 +1,8 @@
+import os
 import argparse
 import numpy as np
+import copy
+import pickle
 
 import utils
 import nn
@@ -34,6 +37,11 @@ def main():
   learning_rate = nn.linear_decay(FLAGS.learning_rate,
                                   FLAGS.learning_rate / 100, 5000)
 
+  # early stopping vars
+  best_model = None
+  best_accuracy = 0
+  faults = 0
+
   # train
   print('Training...')
   for step in range(1, FLAGS.steps + 1):
@@ -53,9 +61,34 @@ def main():
       accuracy = validate.accuracy(data.val, model, FLAGS.batch_size)
       print('Accuracy = {}'.format(accuracy))
 
-      #TODO: add early stopping
+      # early stopping
+      if accuracy > best_accuracy:
+        best_model = copy.deepcopy(model)
+        # TODO: update best model saved copy here?
+        best_accuracy = accuracy
+        faults = 0
+      else:
+        faults += 1
+        if faults >= FLAGS.tolerance:
+          print('Training stopped early')
+          break
 
   print('Done')
+  print('Best accuracy = {}'.format(best_accuracy))
+
+  # save model
+  if FLAGS.save_path is not None:
+    print('Saving model to {}...'.format(FLAGS.save_path))
+
+    # create directory if does not exist
+    dirname = os.path.dirname(FLAGS.save_path)
+    if dirname:
+      os.makedirs(dirname, exist_ok=True)
+
+    with open(FLAGS.save_path, 'wb') as output:
+      pickle.dump(best_model, output)
+
+    print('Done')
 
 
 if __name__ == '__main__':
@@ -81,6 +114,13 @@ if __name__ == '__main__':
       default=100,
       type=int,
       help='interval between validations')
+  parser.add_argument(
+      '--tolerance',
+      default=5,
+      type=int,
+      help='maximum number of early stopping faults')
+  parser.add_argument(
+      '--save_path', type=str, help='path to save trained model')
   parser.add_argument('--seed', type=int, help='random seed')
   FLAGS = parser.parse_args()
 
