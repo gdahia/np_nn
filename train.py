@@ -5,6 +5,7 @@ import utils
 import nn
 import classifier
 import dataset
+import validate
 
 FLAGS = None
 
@@ -41,6 +42,13 @@ def main():
     if step % FLAGS.loss_steps == 0:
       print('Step {}: loss = {}'.format(step, loss))
 
+    # validate
+    if step % FLAGS.val_steps == 0:
+      accuracy = validate.accuracy(data.val, model, FLAGS.batch_size)
+      print('Accuracy = {}'.format(accuracy))
+
+      #TODO: add early stopping
+
 
 if __name__ == '__main__':
   # parse arguments
@@ -57,6 +65,11 @@ if __name__ == '__main__':
       default=10,
       type=int,
       help='interval between loss prints')
+  parser.add_argument(
+      '--val_steps',
+      default=100,
+      type=int,
+      help='interval between validations')
   parser.add_argument('--seed', type=int, help='random seed')
   FLAGS = parser.parse_args()
 
