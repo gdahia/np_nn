@@ -47,3 +47,13 @@ def one_hot(indices, depth, dtype=np.int32):
   for i, index in enumerate(indices):
     onehot[i, index] = 1
   return onehot
+
+
+def linear_decay(initial, final, steps):
+  def current(k):
+    if k < steps:
+      alpha = k / steps
+      return (1 - alpha) * initial + alpha * final
+    return final
+
+  return current

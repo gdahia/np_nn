@@ -25,9 +25,9 @@ def main():
   model = classifier.LinearSoftmax([], len(data.labels),
                                    np.prod(data.input_shape))
 
-  # starting learning rate
-  # TODO: when changing to decayed learning rate, update help
-  learning_rate = FLAGS.learning_rate
+  # initial learning rate
+  learning_rate = nn.linear_decay(FLAGS.learning_rate,
+                                  FLAGS.learning_rate / 100, 5000)
 
   # train
   for step in range(1, FLAGS.steps + 1):
@@ -36,7 +36,7 @@ def main():
     labels = nn.one_hot(labels, depth=len(data.labels))
 
     # train step
-    loss = model.train(images, labels, learning_rate)
+    loss = model.train(images, labels, learning_rate(step))
 
     # print loss
     if step % FLAGS.loss_steps == 0:
@@ -57,7 +57,10 @@ if __name__ == '__main__':
       '--dataset', required=True, type=int, help='index of dataset to use')
   parser.add_argument('--batch_size', default=32, type=int, help='batch size')
   parser.add_argument(
-      '--learning_rate', default=1e-2, type=float, help='learning rate')
+      '--learning_rate',
+      default=1e-1,
+      type=float,
+      help='initial learning rate')
   parser.add_argument(
       '--steps', default=10000, type=int, help='training steps')
   parser.add_argument(
