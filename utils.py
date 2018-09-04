@@ -40,7 +40,7 @@ def shuffle(instances, labels):
 
 def split(instances, labels, split):
   # compute split point
-  split_point = np.round(len(instances) * split)
+  split_point = int(np.round(len(instances) * split))
 
   # split instances
   train_instances = instances[:split_point]
