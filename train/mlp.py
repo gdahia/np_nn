@@ -27,9 +27,9 @@ def main():
   # create model
   print('Initializing model...')
   model = models.Feedforward(
-      units_ls=[500, 150],
-      activation_fns=[nn.relu for _ in range(2)],
-      activation_dfns=[nn.drelu for _ in range(2)],
+      units_ls=[512, 512, 512],
+      activation_fns=[nn.relu for _ in range(3)],
+      activation_dfns=[nn.drelu for _ in range(3)],
       n_classes=len(data.labels),
       input_dims=np.prod(data.input_shape))
   print('Done')
