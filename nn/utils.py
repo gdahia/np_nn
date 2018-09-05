@@ -65,3 +65,17 @@ def linear_decay(initial, final, steps):
     return final
 
   return current
+
+
+def dropout(activations, keep_prob):
+  # sample mask
+  premask = np.random.uniform(low=0, high=1, size=np.shape(activations))
+  mask = premask < keep_prob
+
+  # drop units
+  activations[~mask] = 0
+
+  # adjust for weight scaling rule only during training
+  activations *= keep_prob
+
+  return activations
