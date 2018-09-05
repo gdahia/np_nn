@@ -76,6 +76,6 @@ def dropout(activations, keep_prob):
   activations[~mask] = 0
 
   # adjust for weight scaling rule only during training
-  activations *= keep_prob
+  activations /= keep_prob
 
   return activations
