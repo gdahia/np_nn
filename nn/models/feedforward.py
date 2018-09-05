@@ -12,6 +12,7 @@ class Feedforward(NeuralNet):
                activation_dfns,
                n_classes,
                input_dims,
+               dropout_keep_probs=None,
                W_prior=None,
                b_prior=None,
                c_prior=None):
@@ -26,9 +27,22 @@ class Feedforward(NeuralNet):
       raise ValueError(
           'number of activation functions and derivatives do not match')
 
+    # assert every layer has dropout keep probability or none has
+    if dropout_keep_probs is not None:
+      if len(dropout_keep_probs) != len(units_ls):
+        raise ValueError(
+            'number of layers and dropout keep probabilities do not match')
+
     # capture activation functions and resp grads
     self._fns = activation_fns + [lambda x: x]
     self._dfns = activation_dfns + [lambda _: 1]
+
+    # fix for no dropout
+    self._keep_probs = None
+    if dropout_keep_probs is None:
+      self._keep_probs = [1] * len(self._fns)
+    else:
+      self._keep_probs = dropout_keep_probs + [1]
 
     # trick for using last units for shape
     self._input_dims = input_dims
@@ -94,8 +108,10 @@ class Feedforward(NeuralNet):
 
     # store every activation in forward pass
     activations = [xs]
-    for W, b, fn in zip(self._Ws, self._bs, self._fns):
+    for W, b, fn, keep_prob in zip(self._Ws, self._bs, self._fns,
+                                   self._keep_probs):
       xs = fn(np.matmul(xs, W) + b)
+      xs = nn.dropout(xs, keep_prob)
       activations.append(xs)
 
     # softmax predictions
