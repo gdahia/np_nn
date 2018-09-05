@@ -5,7 +5,6 @@ import copy
 
 import utils
 import nn
-import models
 import dataset
 import validate
 
@@ -26,7 +25,7 @@ def main():
 
   # create model
   print('Initializing model...')
-  model = models.Feedforward(
+  model = nn.models.Feedforward(
       units_ls=[512, 512, 512],
       activation_fns=[nn.relu for _ in range(3)],
       activation_dfns=[nn.drelu for _ in range(3)],

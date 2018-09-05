@@ -1,8 +1,8 @@
 import numpy as np
 
-import nn
+import nn.utils as nn
 
-from models.neural_net import NeuralNet
+from nn.models.neural_net import NeuralNet
 
 
 class Feedforward(NeuralNet):
