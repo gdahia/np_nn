@@ -21,6 +21,7 @@ class Feedforward(NeuralNet):
     self._dfns = activation_dfns + [lambda _: 1]
 
     # trick for using last units for shape
+    self._input_dims = input_dims
     prev_dims = input_dims
 
     # initialize variables
@@ -65,7 +66,7 @@ class Feedforward(NeuralNet):
 
   def infer(self, x):
     # flatten 'x'
-    x = np.reshape(x, (-1, self._Ws[0].shape[0]))
+    x = np.reshape(x, (-1, self._input_dims))
 
     # relu layers
     for W, b in zip(self._Ws[:-1], self._bs[:-1]):
@@ -79,7 +80,7 @@ class Feedforward(NeuralNet):
 
   def _forward(self, inputs, labels):
     # flatten 'inputs'
-    xs = np.reshape(inputs, (len(inputs), -1))
+    xs = np.reshape(inputs, (-1, self._input_dims))
 
     # store every activation in forward pass
     activations = [xs]
