@@ -16,6 +16,16 @@ class Feedforward(NeuralNet):
                b_prior=None,
                c_prior=None):
     # TODO: add docstring
+    # assert number of layers and activation functions match
+    if len(units_ls) != len(activation_fns):
+      raise ValueError(
+          'number of layers and activation functions do not match')
+
+    # assert all activation function have derivatives
+    if len(activation_fns) != len(activation_dfns):
+      raise ValueError(
+          'number of activation functions and derivatives do not match')
+
     # capture activation functions and resp grads
     self._fns = activation_fns + [lambda x: x]
     self._dfns = activation_dfns + [lambda _: 1]
