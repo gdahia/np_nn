@@ -16,7 +16,6 @@ class Feedforward(NeuralNet):
                W_prior=None,
                b_prior=None,
                c_prior=None):
-    # TODO: add docstring
     # assert number of layers and activation functions match
     if len(units_ls) != len(activation_fns):
       raise ValueError(
@@ -125,8 +124,6 @@ class Feedforward(NeuralNet):
 
   def _backward(self, activations, labels):
     # compute gradient wrt to softmax
-    # TODO: derive if means can be computed when each gradient is ready to perform faster calculations
-    # grad = np.mean(activations[-1] - labels, 0)
     grad = activations[-1] - labels
 
     # compute gradients with backpropagation

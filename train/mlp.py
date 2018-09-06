@@ -64,7 +64,6 @@ def main():
       # early stopping
       if accuracy > best_accuracy:
         best_model = copy.deepcopy(model)
-        # TODO: update best model saved copy here?
         best_accuracy = accuracy
         faults = 0
       else:

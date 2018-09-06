@@ -13,7 +13,7 @@ def accuracy(dataset, model, batch_size):
 
     # predict outputs for inputs
     scores = model.infer(inputs)
-    preds = np.argmax(scores, axis=1)  # TODO: move it to model file
+    preds = np.argmax(scores, axis=1)
 
     # update statistics
     total += len(inputs)
