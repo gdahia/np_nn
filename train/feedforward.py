@@ -26,14 +26,14 @@ def main():
   # create model
   print('Initializing model...')
   model = nn.models.Feedforward(
-      units_ls=[],
-      activation_fns=[],
-      activation_dfns=[],
-      n_classes=len(data.labels),
-      input_dims=np.prod(data.input_shape))
+      units_ls=[512, 512, len(data.labels)],
+      activation_fns=([nn.relu] * 2) + [nn.linear],
+      input_dims=np.prod(data.input_shape),
+      loss_fn=nn.softmax_cross_entropy_with_logits,
+      infer_fns=([nn.relu] * 2) + [nn.softmax])
   print('Done')
 
-  # initial learning rate
+  # learning rate decay
   learning_rate = nn.linear_decay(FLAGS.learning_rate,
                                   FLAGS.learning_rate / 100, 5000)
 
@@ -97,10 +97,10 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
       '--dataset', required=True, type=int, help='index of dataset to use')
-  parser.add_argument('--batch_size', default=16, type=int, help='batch size')
+  parser.add_argument('--batch_size', default=8, type=int, help='batch size')
   parser.add_argument(
       '--learning_rate',
-      default=1e-1,
+      default=1e-2,
       type=float,
       help='initial learning rate')
   parser.add_argument(

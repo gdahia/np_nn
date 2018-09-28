@@ -1,45 +1,91 @@
 import numpy as np
 
 
-def relu(x):
-  return np.maximum(x, 0)
+class _functor:
+  def __new__(*args):
+    return args[0]._fn(*args[1:])
 
 
-def drelu(x):
-  return (x > 0)
+class linear(_functor):
+  @staticmethod
+  def _fn(x):
+    return x
+
+  @staticmethod
+  def grad(x):
+    return 1
 
 
-def softmax(x, axis=None):
-  x_ = x - np.max(x, axis=axis, keepdims=True)
-  exp_x = np.exp(x_)
-  return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
+class relu(_functor):
+  @staticmethod
+  def _fn(x):
+    return np.maximum(x, 0)
+
+  @staticmethod
+  def grad(x):
+    return np.array(x > 0)
 
 
-def sigmoid(x):
-  if x >= 0:
-    return 1 / (1 + np.exp(-x))
-  else:
+class sigmoid(_functor):
+  @staticmethod
+  def _fn(x):
     exp_x = np.exp(x)
-    return exp_x / (1 + exp_x)
+    return np.maximum(x >= 0, 1 / (1 + np.exp(-x)), exp_x / (1 + exp_x))
+
+  @staticmethod
+  def grad(x):
+    return sigmoid(x) * (1 - sigmoid(x))
 
 
-def softmax_cross_entropy_with_logits(labels, logits, axis=None):
-  # force arguments into np.array format
-  labels = np.array(labels)
-  logits = np.array(logits)
+class softmax(_functor):
+  @staticmethod
+  def _fn(x, axis=-1):
+    x_ = x - np.max(x, axis=axis, keepdims=True)
+    exp_x = np.exp(x_)
+    return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
 
-  # compute like tensorflow implementation:
-  # https://github.com/tensorflow/tensorflow/blob/3e00e39c17124c9945fbad04a551a39ab4144935/tensorflow/core/kernels/xent_op.h#L110-L111
-  cross_entropy = -np.sum(
-      labels *
-      (logits - np.log(np.sum(np.exp(logits), axis=axis, keepdims=True))),
-      axis=axis,
-      keepdims=True)
-
-  return cross_entropy
+  @staticmethod
+  def grad(x, axis=-1):
+    #TODO
+    pass
 
 
-def cross_entropy(probs, preds, axis=None):
+class softmax_cross_entropy_with_logits(_functor):
+  @staticmethod
+  def _fn(labels, logits, axis=-1):
+    # force arguments into np.array format
+    labels = np.array(labels)
+    logits = np.array(logits)
+
+    # compute like tensorflow implementation:
+    # https://github.com/tensorflow/tensorflow/blob/3e00e39c17124c9945fbad04a551a39ab4144935/tensorflow/core/kernels/xent_op.h#L110-L111
+    cross_entropy = -np.sum(
+        labels *
+        (logits - np.log(np.sum(np.exp(logits), axis=axis, keepdims=True))),
+        axis=axis,
+        keepdims=True)
+
+    return cross_entropy
+
+  @staticmethod
+  def grad(labels, logits):
+    return softmax(logits) - labels
+
+
+class sigmoid_cross_entropy_with_logits(_functor):
+  @staticmethod
+  def _fn(prob, logits, axis=-1):
+    cross_entropy = -(prob * np.log(sigmoid(logits)) +
+                      (1 - prob) * np.log(1 - sigmoid(logits)))
+
+    return cross_entropy
+
+  @staticmethod
+  def grad(prob, logits):
+    return sigmoid(logits) - prob
+
+
+def cross_entropy(probs, preds, axis=-1):
   # make arguments be np arrays
   probs = np.array(probs)
   preds = np.array(preds)
@@ -50,7 +96,7 @@ def cross_entropy(probs, preds, axis=None):
   return cross_entropy
 
 
-def one_hot(indices, depth, dtype=np.int32):
+def one_hot(indices, depth, dtype=np.float32):
   onehot = np.zeros((len(indices), depth), dtype=dtype)
   for i, index in enumerate(indices):
     onehot[i, index] = 1

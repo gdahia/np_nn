@@ -9,22 +9,16 @@ class Feedforward(NeuralNet):
   def __init__(self,
                units_ls,
                activation_fns,
-               activation_dfns,
-               n_classes,
                input_dims,
+               loss_fn,
+               infer_fns=None,
                dropout_keep_probs=None,
                W_prior=None,
-               b_prior=None,
-               c_prior=None):
+               b_prior=None):
     # assert number of layers and activation functions match
     if len(units_ls) != len(activation_fns):
       raise ValueError(
           'number of layers and activation functions do not match')
-
-    # assert all activation function have derivatives
-    if len(activation_fns) != len(activation_dfns):
-      raise ValueError(
-          'number of activation functions and derivatives do not match')
 
     # assert every layer has dropout keep probability or none has
     if dropout_keep_probs is not None:
@@ -33,17 +27,26 @@ class Feedforward(NeuralNet):
             'number of layers and dropout keep probabilities do not match')
 
     # capture activation functions and resp grads
-    self._fns = activation_fns + [lambda x: x]
-    self._dfns = activation_dfns + [lambda _: 1]
+    self._activation_fns = activation_fns
+    if infer_fns is None:
+      self._infer_fns = activation_fns
+    elif len(infer_fns) == len(activation_fns):
+      self._infer_fns = infer_fns
+    else:
+      raise ValueError(('number of inference activation functions and number'
+                        'of training activation functions do not match'))
 
-    # fix for no dropout
+    # capture loss function
+    self._loss_fn = loss_fn
+
+    # capture and fix for no dropout
     self._keep_probs = None
     if dropout_keep_probs is None:
-      self._keep_probs = [1] * len(self._fns)
+      self._keep_probs = [1] * len(self._activation_fns)
     else:
       self._keep_probs = dropout_keep_probs + [1]
 
-    # trick for using last units for shape
+    # trick for using previous units for shape
     self._input_dims = input_dims
     prev_dims = input_dims
 
@@ -70,84 +73,59 @@ class Feedforward(NeuralNet):
 
       prev_dims = units
 
-    # classification layer
-    W_shape = (prev_dims, n_classes)
-    if W_prior is None:
-      # xavier initialization
-      val = 6 / np.sqrt(prev_dims + n_classes)
-      W = np.random.uniform(low=-val, high=val, size=W_shape)
-    else:
-      W = W_prior(W_shape)
-    self._Ws.append(W)
+  def infer(self, inputs):
+    # flatten 'input_'
+    output = np.reshape(inputs, (-1, self._input_dims))
 
-    # initialize 'c'
-    if c_prior is None:
-      c = np.ones(n_classes, dtype=np.float32) / n_classes
-    else:
-      c = c_prior(n_classes)
-    self._bs.append(c)
+    for W, b, fn in zip(self._Ws, self._bs, self._infer_fns):
+      output = fn(np.matmul(output, W) + b)
 
-  def infer(self, x):
-    # flatten 'x'
-    x = np.reshape(x, (-1, self._input_dims))
+    return output
 
-    # relu layers
-    for W, b in zip(self._Ws[:-1], self._bs[:-1]):
-      x = nn.relu(np.matmul(x, W) + b)
-
-    # softmax layer
-    x = np.matmul(x, self._Ws[-1]) + self._bs[-1]
-    y = nn.softmax(x, axis=1)
-
-    return y
-
-  def _forward(self, inputs, labels):
+  def forward(self, inputs, labels):
     # flatten 'inputs'
-    xs = np.reshape(inputs, (-1, self._input_dims))
+    inputs = np.reshape(inputs, (-1, self._input_dims))
 
-    # store every activation in forward pass
-    activations = [xs]
-    for W, b, fn, keep_prob in zip(self._Ws, self._bs, self._fns,
+    # store every activation and hidden output in forward pass
+    hiddens = [inputs]
+    activations = [None]
+    for W, b, fn, keep_prob in zip(self._Ws, self._bs, self._activation_fns,
                                    self._keep_probs):
-      xs = fn(np.matmul(xs, W) + b)
-      xs = nn.dropout(xs, keep_prob)
-      activations.append(xs)
+      activation = np.matmul(hiddens[-1], W) + b
+      hidden = fn(activation)
+      hidden = nn.dropout(hidden, keep_prob)
 
-    # softmax predictions
-    preds = nn.softmax(xs, axis=1)
-    activations.append(preds)
+      activations.append(activation)
+      hiddens.append(hidden)
 
     # compute loss
-    loss = np.mean(nn.cross_entropy(probs=labels, preds=preds, axis=1))
+    loss = np.mean(self._loss_fn(labels, hiddens[-1]))
 
-    return activations, loss
+    return activations, hiddens, loss
 
-  def _backward(self, activations, labels):
-    # compute gradient wrt to softmax
-    grad = activations[-1] - labels
-
+  def backward(self, activations, hiddens, labels):
     # compute gradients with backpropagation
     grads = []
-    for i in reversed(range(len(activations[:-2]))):
+    grad = self._loss_fn.grad(labels, hiddens[-1])
+    for i in range(len(activations) - 1, 0, -1):
       # compute and store bias gradient
-      grad *= self._dfns[i](activations[i + 1])
+      grad *= self._activation_fns[i - 1].grad(activations[i])
       db = np.mean(grad, axis=0)
-      grads.append(db)
 
       # compute and store weights gradient
       dW = np.matmul(
-          np.expand_dims(activations[i], -1), np.expand_dims(grad, 1))
+          np.expand_dims(hiddens[i - 1], -1), np.expand_dims(grad, 1))
       dW = np.mean(dW, axis=0)
-      grads.append(dW)
+
+      # store gradients
+      grads.append((dW, db))
 
       # continue backprop
-      grad = np.matmul(grad, self._Ws[i].T)
+      grad = np.matmul(grad, self._Ws[i - 1].T)
 
-    return grads
+    return reversed(grads)
 
-  def _update(self, grads, learning_rate):
-    for i, grad in enumerate(reversed(grads)):
-      if i % 2 == 0:
-        self._Ws[i // 2] -= learning_rate * grad
-      else:
-        self._bs[i // 2] -= learning_rate * grad
+  def update(self, grads, learning_rate):
+    for i, (dW, db) in enumerate(grads):
+      self._Ws[i] -= learning_rate * dW
+      self._bs[i] -= learning_rate * db
