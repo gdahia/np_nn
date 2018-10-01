@@ -11,6 +11,7 @@ class Feedforward(NeuralNet):
                activation_fns,
                input_dims,
                loss_fn,
+               optimizer,
                infer_fns=None,
                dropout_keep_probs=None,
                W_prior=None,
@@ -50,9 +51,11 @@ class Feedforward(NeuralNet):
     self._input_dims = input_dims
     prev_dims = input_dims
 
-    # initialize variables
+    # initialize variables and optimizers
     self._Ws = []
+    self._W_optimizers = []
     self._bs = []
+    self._b_optimizers = []
     for units in units_ls:
       # initialize 'W's
       W_shape = (prev_dims, units)
@@ -62,6 +65,8 @@ class Feedforward(NeuralNet):
         W = np.random.uniform(low=-val, high=val, size=W_shape)
       else:
         W = W_prior(W_shape)
+
+      self._W_optimizers.append(optimizer(W_shape))
       self._Ws.append(W)
 
       # initialize 'b's
@@ -69,6 +74,8 @@ class Feedforward(NeuralNet):
         b = np.zeros(units)
       else:
         b = b_prior(units)
+
+      self._b_optimizers.append(optimizer(units))
       self._bs.append(b)
 
       prev_dims = units
@@ -125,7 +132,7 @@ class Feedforward(NeuralNet):
 
     return list(reversed(grads))
 
-  def update(self, grads, learning_rate):
+  def update(self, grads, **kwargs):
     for i, (dW, db) in enumerate(grads):
-      self._Ws[i] -= learning_rate * dW
-      self._bs[i] -= learning_rate * db
+      self._Ws[i] -= self._W_optimizers[i].step(dW, **kwargs)
+      self._bs[i] -= self._b_optimizers[i].step(db, **kwargs)

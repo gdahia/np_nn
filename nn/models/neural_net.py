@@ -15,12 +15,12 @@ class NeuralNet(ABC):
     pass
 
   @abstractmethod
-  def update(self, grads, learning_rate):
+  def update(self, grads, optimizer):
     pass
 
-  def train(self, inputs, labels, learning_rate):
+  def train(self, inputs, labels, **kwargs):
     activations, hiddens, loss = self.forward(inputs, labels)
     grads = self.backward(activations, hiddens, labels)
-    self.update(grads, learning_rate)
+    self.update(grads, **kwargs)
 
     return loss

@@ -30,6 +30,7 @@ def main():
       activation_fns=([nn.relu] * 2) + [nn.linear],
       input_dims=np.prod(data.input_shape),
       loss_fn=nn.softmax_cross_entropy_with_logits,
+      optimizer=nn.optimizer.GradientDescent,
       infer_fns=([nn.relu] * 2) + [nn.softmax])
   print('Done')
 
@@ -50,7 +51,7 @@ def main():
     labels = nn.one_hot(labels, depth=len(data.labels))
 
     # train step
-    loss = model.train(images, labels, learning_rate(step))
+    loss = model.train(images, labels, learning_rate=learning_rate(step))
 
     # print loss
     if step % FLAGS.loss_steps == 0:
