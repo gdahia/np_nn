@@ -123,7 +123,7 @@ class Feedforward(NeuralNet):
       # continue backprop
       grad = np.matmul(grad, self._Ws[i - 1].T)
 
-    return reversed(grads)
+    return list(reversed(grads))
 
   def update(self, grads, learning_rate):
     for i, (dW, db) in enumerate(grads):
