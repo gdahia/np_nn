@@ -30,13 +30,14 @@ def main():
       activation_fns=([nn.relu] * 2) + [nn.linear],
       input_dims=np.prod(data.input_shape),
       loss_fn=nn.softmax_cross_entropy_with_logits,
-      optimizer=nn.optimizer.GradientDescent,
+      optimizer=nn.optimizer.Momentum,
       infer_fns=([nn.relu] * 2) + [nn.softmax])
   print('Done')
 
-  # learning rate decay
+  # learning rate and momentum decay
   learning_rate = nn.linear_decay(FLAGS.learning_rate,
                                   FLAGS.learning_rate / 100, 5000)
+  momentum = nn.linear_decay(FLAGS.momentum, 1.05 * FLAGS.momentum, 5000)
 
   # early stopping vars
   best_model = None
@@ -51,7 +52,11 @@ def main():
     labels = nn.one_hot(labels, depth=len(data.labels))
 
     # train step
-    loss = model.train(images, labels, learning_rate=learning_rate(step))
+    loss = model.train(
+        images,
+        labels,
+        learning_rate=learning_rate(step),
+        momentum=momentum(step))
 
     # print loss
     if step % FLAGS.loss_steps == 0:
@@ -104,6 +109,7 @@ if __name__ == '__main__':
       default=1e-2,
       type=float,
       help='initial learning rate')
+  parser.add_argument('--momentum', default=0, type=float)
   parser.add_argument(
       '--steps', default=10000, type=int, help='training steps')
   parser.add_argument(
