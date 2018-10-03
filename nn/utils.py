@@ -1,6 +1,48 @@
 import numpy as np
 
 
+class conv2d:
+  def __init__(self, strides, padding='valid'):
+    self._padding = padding
+    self._strides = strides
+
+  def __call__(self, inputs, filters):
+    # explict padding
+    if self._padding == 'same':
+      inputs = np.pad(inputs, ((0, 0), ((filters.shape[0] - 1) // 2,
+                                        (filters.shape[0] - 1) // 2),
+                               ((filters.shape[1] - 1) // 2,
+                                (filters.shape[1] - 1) // 2), (0, 0)),
+                      'constant')
+    elif self._padding == 'valid':
+      inputs = np.array(inputs)
+
+    # declare empty output
+    shape = np.shape(inputs)
+    outputs = np.empty(
+        (shape[0], shape[1] - filters.shape[0] + 1,
+         shape[2] - filters.shape[1] + 1, filters.shape[-1]),
+        dtype=inputs.dtype)
+
+    # flatten filters for dot computation
+    flat_filters = np.reshape(filters, (-1, filters.shape[-1]))
+
+    # convolve
+    for i in range(outputs.shape[1]):
+      for j in range(outputs.shape[2]):
+        receptive_field = inputs[:, i:i + filters.shape[0], j:j +
+                                 filters.shape[1], :]
+        receptive_field = np.reshape(receptive_field, (shape[0], -1))
+
+        outputs[:, i, j, :] = np.dot(receptive_field, flat_filters)
+
+    return outputs
+
+  def grad(self, inputs, filters):
+    #TODO
+    pass
+
+
 class _functor:
   def __new__(*args):
     return args[0]._fn(*args[1:])
