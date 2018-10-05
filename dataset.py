@@ -135,4 +135,5 @@ class Handler:
     self.val = _LabeledDataset(val_images, val_labels, shuffle=False)
 
     # test dataset
+    # TODO: add filenames to test set
     self.test = _UnlabeledDataset(test_images, shuffle=False)
