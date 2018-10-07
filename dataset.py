@@ -57,7 +57,7 @@ class _LabeledDataset:
 
 
 class _UnlabeledDataset:
-  def __init__(self, images, shuffle):
+  def __init__(self, images, names, shuffle):
     # initialize internal resources
     self.epochs = 0
     self._cursor = 0
@@ -65,8 +65,9 @@ class _UnlabeledDataset:
     self._n_examples = len(images)
     self.input_shape = np.shape(images)
 
-    # capture images
+    # capture images and respective filenames
     self._images = images
+    self._names = names
 
     # initial shuffle
     if shuffle:
@@ -75,6 +76,7 @@ class _UnlabeledDataset:
   def next_batch(self, size, incomplete=False):
     # sample data
     batch_images = self._images[self._cursor:self._cursor + size]
+    batch_names = self._names[self._cursor:self._cursor + size]
 
     if size + self._cursor < self._n_examples:
       self._cursor += size
@@ -89,7 +91,7 @@ class _UnlabeledDataset:
       # return incomplete batches
       if incomplete:
         self._cursor = 0
-        return batch_images
+        return batch_images, batch_names
 
       # update cursor
       rem = size - len(batch_images)
@@ -97,12 +99,15 @@ class _UnlabeledDataset:
 
       # fill remainder of batch in next epoch
       rem_images = self._images[:rem]
+      rem_names = self._names[:rem]
       batch_images = np.concatenate([batch_images, rem_images], axis=0)
+      batch_names += rem_names
 
-    return batch_images
+    return batch_images, batch_names
 
   def _shuffle(self):
     self._images = np.random.permutation(self._images)
+    self._names = np.random.permutation(self._names)
 
 
 class Handler:
@@ -126,7 +131,7 @@ class Handler:
 
     # load test data
     test_path = os.path.join(path, 'test')
-    test_images = utils.load_test_data(test_path)
+    test_images, test_filenames = utils.load_test_data(test_path)
 
     # train dataset
     self.train = _LabeledDataset(train_images, train_labels, shuffle=shuffle)
@@ -135,5 +140,4 @@ class Handler:
     self.val = _LabeledDataset(val_images, val_labels, shuffle=False)
 
     # test dataset
-    # TODO: add filenames to test set
-    self.test = _UnlabeledDataset(test_images, shuffle=False)
+    self.test = _UnlabeledDataset(test_images, test_filenames, shuffle=False)
