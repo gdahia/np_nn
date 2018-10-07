@@ -1,4 +1,5 @@
 import argparse
+import pickle
 
 import utils
 import dataset
@@ -16,6 +17,13 @@ def main():
   # load dataset
   print('Loading dataset...')
   data = dataset.Handler(utils.dataset_path(FLAGS.dataset), 0.8)
+  print('Done')
+
+  # load model
+  print('Loading model {}...'.format(FLAGS.model_path))
+  model = None
+  with open(FLAGS.model_path, 'rb') as model_file:
+    model = pickle.load(model_file)
   print('Done')
 
 
