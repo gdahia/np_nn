@@ -63,10 +63,10 @@ class softmax_cross_entropy_with_logits:
 
 class sigmoid_cross_entropy_with_logits:
   def __new__(cls, prob, logits, axis=-1):
-    cross_entropy = -(prob * np.log(sigmoid(logits)) +
-                      (1 - prob) * np.log(1 - sigmoid(logits)))
-
-    return cross_entropy
+    # use tf implementation, as described in:
+    # https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits
+    return np.max(logits, 0) - logits * prob + np.log1p(
+        np.exp(-np.abs(logits)))
 
   @staticmethod
   def grad(prob, logits):
