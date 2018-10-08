@@ -74,10 +74,6 @@ class sigmoid_cross_entropy_with_logits:
 
 
 def cross_entropy(probs, preds, axis=-1):
-  # make arguments be np arrays
-  probs = np.array(probs)
-  preds = np.array(preds)
-
   # compute cross entropy
   cross_entropy = -np.sum(probs * np.log(preds), axis=axis, keepdims=True)
 
