@@ -86,8 +86,7 @@ def cross_entropy(probs, preds, axis=-1):
 
 def one_hot(indices, depth, dtype=np.float32):
   onehot = np.zeros((len(indices), depth), dtype=dtype)
-  for i, index in enumerate(indices):
-    onehot[i, index] = 1
+  onehot[np.arange(len(indices)), indices] = 1
   return onehot
 
 
