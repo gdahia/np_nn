@@ -1,14 +1,8 @@
 import numpy as np
 
 
-class _functor:
-  def __new__(*args):
-    return args[0]._fn(*args[1:])
-
-
-class linear(_functor):
-  @staticmethod
-  def _fn(x):
+class linear:
+  def __new__(cls, x):
     return x
 
   @staticmethod
@@ -16,9 +10,8 @@ class linear(_functor):
     return 1
 
 
-class relu(_functor):
-  @staticmethod
-  def _fn(x):
+class relu:
+  def __new__(cls, x):
     return np.maximum(x, 0)
 
   @staticmethod
@@ -26,9 +19,8 @@ class relu(_functor):
     return np.array(x > 0)
 
 
-class sigmoid(_functor):
-  @staticmethod
-  def _fn(x):
+class sigmoid:
+  def __new__(cls, x):
     exp_x = np.exp(x)
     return np.maximum(x >= 0, 1 / (1 + np.exp(-x)), exp_x / (1 + exp_x))
 
@@ -37,22 +29,19 @@ class sigmoid(_functor):
     return sigmoid(x) * (1 - sigmoid(x))
 
 
-class softmax(_functor):
-  @staticmethod
-  def _fn(x, axis=-1):
+class softmax:
+  def __new__(cls, x, axis=-1):
     x_ = x - np.max(x, axis=axis, keepdims=True)
     exp_x = np.exp(x_)
     return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
 
   @staticmethod
   def grad(x, axis=-1):
-    #TODO
-    pass
+    raise NotImplementedError()
 
 
-class softmax_cross_entropy_with_logits(_functor):
-  @staticmethod
-  def _fn(labels, logits, axis=-1):
+class softmax_cross_entropy_with_logits:
+  def __new__(cls, labels, logits, axis=-1):
     # force arguments into np.array format
     labels = np.array(labels)
     logits = np.array(logits)
@@ -72,9 +61,8 @@ class softmax_cross_entropy_with_logits(_functor):
     return softmax(logits) - labels
 
 
-class sigmoid_cross_entropy_with_logits(_functor):
-  @staticmethod
-  def _fn(prob, logits, axis=-1):
+class sigmoid_cross_entropy_with_logits:
+  def __new__(cls, prob, logits, axis=-1):
     cross_entropy = -(prob * np.log(sigmoid(logits)) +
                       (1 - prob) * np.log(1 - sigmoid(logits)))
 
