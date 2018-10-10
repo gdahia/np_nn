@@ -3,26 +3,53 @@ import numpy as np
 
 class conv2d:
   def __init__(self, strides, padding='valid'):
+    if padding != 'valid' and padding != 'same':
+      raise NotImplementedError('padding should be either "valid" or "same".')
     self._padding = padding
+
+    if strides[0] != 1 or strides[-1] != 1:
+      raise NotImplementedError('depth and channel strides should be 1.')
     self._strides = strides
 
   def __call__(self, inputs, filters):
-    # explict padding
-    if self._padding == 'same':
-      inputs = np.pad(inputs, ((0, 0), ((filters.shape[0] - 1) // 2,
-                                        (filters.shape[0] - 1) // 2),
-                               ((filters.shape[1] - 1) // 2,
-                                (filters.shape[1] - 1) // 2), (0, 0)),
-                      'constant')
-    elif self._padding == 'valid':
-      inputs = np.array(inputs)
+    in_shape = np.shape(inputs)
+    strides = self._strides
 
-    # declare empty output
-    shape = np.shape(inputs)
-    outputs = np.empty(
-        (shape[0], shape[1] - filters.shape[0] + 1,
-         shape[2] - filters.shape[1] + 1, filters.shape[-1]),
-        dtype=inputs.dtype)
+    if self._padding == 'same':
+      # tf-like padding
+      # heigh padding
+      if (in_shape[1] % strides[1] == 0):
+        pad_along_height = max(filters.shape[0] - strides[1], 0)
+      else:
+        pad_along_height = max(filters.shape[0] - (in_shape[1] % strides[1]),
+                               0)
+
+      # width padding
+      if (in_shape[2] % strides[2] == 0):
+        pad_along_width = max(filters.shape[1] - strides[2], 0)
+      else:
+        pad_along_width = max(filters.shape[1] - (in_shape[2] % strides[2]), 0)
+
+      pad_top = pad_along_height // 2
+      pad_bottom = pad_along_height - pad_top
+      pad_left = pad_along_width // 2
+      pad_right = pad_along_width - pad_left
+
+      # pad input
+      inputs = np.pad(inputs, ((0, 0), ((pad_top, pad_bottom)),
+                               (pad_left, pad_right), (0, 0)), 'constant')
+
+      # empty output
+      out_height = (in_shape[1] + strides[1] - 1) // strides[1]
+      out_width = (in_shape[2] + strides[2] - 1) // strides[2]
+      out_shape = (in_shape[0], out_height, out_width, filters.shape[-1])
+      outputs = np.empty(out_shape, dtype=inputs.dtype)
+    else:
+      # empty output
+      out_height = (in_shape[1] - filters.shape[0] + strides[1]) // strides[1]
+      out_width = (in_shape[2] - filters.shape[1] + strides[2]) // strides[2]
+      out_shape = (in_shape[0], out_height, out_width, filters.shape[-1])
+      outputs = np.empty(out_shape, dtype=inputs.dtype)
 
     # flatten filters for dot computation
     flat_filters = np.reshape(filters, (-1, filters.shape[-1]))
@@ -30,9 +57,10 @@ class conv2d:
     # convolve
     for i in range(outputs.shape[1]):
       for j in range(outputs.shape[2]):
-        receptive_field = inputs[:, i:i + filters.shape[0], j:j +
-                                 filters.shape[1], :]
-        receptive_field = np.reshape(receptive_field, (shape[0], -1))
+        receptive_field = inputs[:, strides[1] * i:strides[1] * i +
+                                 filters.shape[0], strides[2] *
+                                 j:strides[2] * j + filters.shape[1], :]
+        receptive_field = np.reshape(receptive_field, (in_shape[0], -1))
 
         outputs[:, i, j, :] = np.dot(receptive_field, flat_filters)
 
