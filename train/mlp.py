@@ -25,10 +25,12 @@ def main():
 
   # create model
   print('Initializing model...')
+  dims = [np.prod(data.input_shape), 512, 512, len(data.labels)]
+  W_ls = [(prev_dims, units) for prev_dims, units in zip(dims[:-1], dims[1:])]
   model = nn.models.Feedforward(
-      units_ls=[512, 512, len(data.labels)],
+      W_ls=W_ls,
+      ops=[nn.matmul] * len(W_ls),
       activation_fns=([nn.relu] * 2) + [nn.linear],
-      input_dims=np.prod(data.input_shape),
       loss_fn=nn.softmax_cross_entropy_with_logits,
       optimizer=nn.optimizer.Momentum,
       infer_fns=([nn.relu] * 2) + [nn.softmax])
@@ -49,6 +51,9 @@ def main():
   for step in range(1, FLAGS.steps + 1):
     # sample batch
     images, labels = data.train.next_batch(FLAGS.batch_size)
+
+    # adjust images, labels to net
+    images = np.reshape(images, (FLAGS.batch_size, -1))
     labels = nn.one_hot(labels, depth=len(data.labels))
 
     # train step

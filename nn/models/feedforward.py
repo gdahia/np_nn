@@ -7,27 +7,30 @@ from nn.models.neural_net import NeuralNet
 
 class Feedforward(NeuralNet):
   def __init__(self,
-               units_ls,
+               W_ls,
+               ops,
                activation_fns,
-               input_dims,
                loss_fn,
                optimizer,
                infer_fns=None,
-               dropout_keep_probs=None,
-               W_prior=None,
-               b_prior=None):
+               dropout_keep_probs=None):
     # assert number of layers and activation functions match
-    if len(units_ls) != len(activation_fns):
+    if len(W_ls) != len(activation_fns):
       raise ValueError(
           'number of layers and activation functions do not match')
 
+    # assert number of layers and ops match
+    if len(W_ls) != len(ops):
+      raise ValueError('number of layers and ops do not match')
+
     # assert every layer has dropout keep probability or none has
     if dropout_keep_probs is not None:
-      if len(dropout_keep_probs) != len(units_ls):
+      if len(dropout_keep_probs) != len(W_ls):
         raise ValueError(
             'number of layers and dropout keep probabilities do not match')
 
     # capture activation functions and resp grads
+    self._ops = ops
     self._activation_fns = activation_fns
     if infer_fns is None:
       self._infer_fns = activation_fns
@@ -47,62 +50,56 @@ class Feedforward(NeuralNet):
     else:
       self._keep_probs = dropout_keep_probs + [1]
 
-    # trick for using previous units for shape
-    self._input_dims = input_dims
-    prev_dims = input_dims
-
     # initialize variables and optimizers
     self._Ws = []
     self._W_optimizers = []
     self._bs = []
     self._b_optimizers = []
-    for units in units_ls:
-      # initialize 'W's
-      W_shape = (prev_dims, units)
-      if W_prior is None:
-        # xavier initialization
-        val = 6 / np.sqrt(prev_dims + units)
-        W = np.random.uniform(low=-val, high=val, size=W_shape)
-      else:
-        W = W_prior(W_shape)
-
-      self._W_optimizers.append(optimizer(W_shape))
+    for W in W_ls:
+      # glorot-initialize layer weights
+      fan_in, fan_out = nn.get_fans(W)
+      val = np.sqrt(6 / (fan_in + fan_out))
+      W = np.random.uniform(low=-val, high=val, size=W)
+      self._W_optimizers.append(optimizer(W.shape))
       self._Ws.append(W)
 
-      # initialize 'b's
-      if b_prior is None:
-        b = np.zeros(units)
-      else:
-        b = b_prior(units)
-
-      self._b_optimizers.append(optimizer(units))
+      # zero initialize layer biases
+      b = np.zeros(W.shape[-1])
+      self._b_optimizers.append(optimizer(W.shape[-1]))
       self._bs.append(b)
 
-      prev_dims = units
-
   def infer(self, inputs):
-    # flatten 'input_'
-    output = np.reshape(inputs, (-1, self._input_dims))
+    # group into layers
+    W_ls = self._Ws
+    bs = self._bs
+    fns = self._infer_fns
+    ops = self._ops
+    layers = zip(W_ls, bs, fns, ops)
 
-    for W, b, fn in zip(self._Ws, self._bs, self._infer_fns):
-      output = fn(np.matmul(output, W) + b)
+    # feedforward
+    outputs = inputs
+    for W, b, fn, op in layers:
+      outputs = fn(op(outputs, W) + b)
 
-    return output
+    return outputs
 
   def forward(self, inputs, labels):
-    # flatten 'inputs'
-    inputs = np.reshape(inputs, (-1, self._input_dims))
+    W_ls = self._Ws
+    bs = self._bs
+    fns = self._activation_fns
+    keep_probs = self._keep_probs
+    ops = self._ops
+    layers = zip(W_ls, bs, fns, keep_probs, ops)
 
     # store every activation and hidden output in forward pass
     hiddens = [inputs]
     activations = [None]
-    for W, b, fn, keep_prob in zip(self._Ws, self._bs, self._activation_fns,
-                                   self._keep_probs):
-      activation = np.matmul(hiddens[-1], W) + b
+    for W, b, fn, keep_prob, op in layers:
+      activation = op(hiddens[-1], W) + b
+      activations.append(activation)
+
       hidden = fn(activation)
       hidden = nn.dropout(hidden, keep_prob)
-
-      activations.append(activation)
       hiddens.append(hidden)
 
     # compute loss
@@ -111,24 +108,29 @@ class Feedforward(NeuralNet):
     return activations, hiddens, loss
 
   def backward(self, activations, hiddens, labels):
+    W_ls = self._Ws
+    fns = self._activation_fns
+    ops = self._ops
+
     # compute gradients with backpropagation
     grads = []
     grad = self._loss_fn.grad(labels, hiddens[-1])
     for i in range(len(activations) - 1, 0, -1):
       # compute and store bias gradient
-      grad *= self._activation_fns[i - 1].grad(activations[i])
+      grad *= fns[i - 1].grad(activations[i])
       db = np.mean(grad, axis=0)
 
       # compute and store weights gradient
-      dW = np.matmul(
-          np.expand_dims(hiddens[i - 1], -1), np.expand_dims(grad, 1))
+      dW = ops[i - 1].backprop_weights(
+          inputs=hiddens[i - 1], weights=W_ls[i - 1], outputs_backprop=grad)
       dW = np.mean(dW, axis=0)
 
       # store gradients
       grads.append((dW, db))
 
       # continue backprop
-      grad = np.matmul(grad, self._Ws[i - 1].T)
+      grad = ops[i - 1].backprop_inputs(
+          inputs=hiddens[i - 2], weights=W_ls[i - 1], outputs_backprop=grad)
 
     return list(reversed(grads))
 

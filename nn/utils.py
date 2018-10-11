@@ -1,6 +1,21 @@
 import numpy as np
 
 
+class matmul:
+  def __new__(cls, inputs, weights):
+    return np.matmul(inputs, weights)
+
+  @staticmethod
+  def backprop_weights(inputs, weights, outputs_backprop):
+    inputs = np.expand_dims(inputs, -1)
+    outputs_backprop = np.expand_dims(outputs_backprop, 1)
+    return np.matmul(inputs, outputs_backprop)
+
+  @staticmethod
+  def backprop_inputs(inputs, weights, outputs_backprop):
+    return np.matmul(outputs_backprop, weights.T)
+
+
 class conv2d:
   def __init__(self, strides, padding='valid'):
     padding = padding.lower()
@@ -12,7 +27,8 @@ class conv2d:
       raise NotImplementedError('depth and channel strides should be 1.')
     self._strides = strides
 
-  def __call__(self, inputs, filters):
+  def __call__(self, inputs, weights):
+    filters = weights
     in_shape = np.shape(inputs)
     strides = self._strides
 
@@ -52,10 +68,8 @@ class conv2d:
       out_shape = (in_shape[0], out_height, out_width, filters.shape[-1])
       outputs = np.empty(out_shape, dtype=inputs.dtype)
 
-    # flatten filters for dot computation
-    flat_filters = np.reshape(filters, (-1, filters.shape[-1]))
-
     # convolve
+    flat_filters = np.reshape(filters, (-1, filters.shape[-1]))
     for i in range(outputs.shape[1]):
       for j in range(outputs.shape[2]):
         rec_field = inputs[:, strides[1] * i:strides[1] * i + filters.shape[0],
@@ -66,7 +80,9 @@ class conv2d:
 
     return outputs
 
-  def backprop_filters(self, inputs, filters, outputs_backprop):
+  def backprop_weights(self, inputs, weights, outputs_backprop):
+
+    filters = weights
     in_shape = inputs.shape
     strides = self._strides
 
@@ -113,7 +129,7 @@ class conv2d:
 
     return grad
 
-  def backprop_inputs(self, inputs, filters):
+  def backprop_inputs(self, inputs, weights, outputs_backprop):
     raise NotImplementedError()
 
 
@@ -224,3 +240,9 @@ def dropout(activations, keep_prob):
   activations /= keep_prob
 
   return activations
+
+
+def get_fans(shape):
+  fan_in = shape[0] if len(shape) == 2 else np.prod(shape[1:])
+  fan_out = shape[1] if len(shape) == 2 else shape[0]
+  return fan_in, fan_out
