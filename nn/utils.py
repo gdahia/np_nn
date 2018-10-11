@@ -174,9 +174,8 @@ class softmax:
 
 class softmax_cross_entropy_with_logits:
   def __new__(cls, labels, logits, axis=-1):
-    # force arguments into np.array format
-    labels = np.array(labels)
-    logits = np.array(logits)
+    # reshape logits to match labels format
+    logits = np.reshape(logits, labels.shape)
 
     # compute like tensorflow implementation:
     # https://github.com/tensorflow/tensorflow/blob/3e00e39c17124c9945fbad04a551a39ab4144935/tensorflow/core/kernels/xent_op.h#L110-L111
@@ -190,7 +189,17 @@ class softmax_cross_entropy_with_logits:
 
   @staticmethod
   def grad(labels, logits):
-    return softmax(logits) - labels
+    # reshape logits to match labels format
+    logits_shape = logits.shape
+    logits = np.reshape(logits, labels.shape)
+
+    # compute gradient
+    grad = softmax(logits) - labels
+
+    # reshape to logits shape
+    grad = np.reshape(grad, logits_shape)
+
+    return grad
 
 
 class sigmoid_cross_entropy_with_logits:
