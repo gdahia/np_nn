@@ -58,12 +58,11 @@ class conv2d:
     # convolve
     for i in range(outputs.shape[1]):
       for j in range(outputs.shape[2]):
-        receptive_field = inputs[:, strides[1] * i:strides[1] * i +
-                                 filters.shape[0], strides[2] *
-                                 j:strides[2] * j + filters.shape[1], :]
-        receptive_field = np.reshape(receptive_field, (in_shape[0], -1))
+        rec_field = inputs[:, strides[1] * i:strides[1] * i + filters.shape[0],
+                           strides[2] * j:strides[2] * j + filters.shape[1], :]
+        rec_field = np.reshape(rec_field, (in_shape[0], -1))
 
-        outputs[:, i, j, :] = np.dot(receptive_field, flat_filters)
+        outputs[:, i, j, :] = np.dot(rec_field, flat_filters)
 
     return outputs
 
@@ -95,22 +94,22 @@ class conv2d:
       inputs = np.pad(inputs, ((0, 0), ((pad_top, pad_bottom)),
                                (pad_left, pad_right), (0, 0)), 'constant')
 
-    # empty gradient
-    grad = np.empty((inputs.shape[0], ) + filters.shape, dtype=filters.dtype)
+    # prepare indices and outputs_backprop for efficient computation
+    k = [strides[i] * np.arange(outputs_backprop.shape[i]) for i in (1, 2)]
+    k[0] = np.repeat(k[0], outputs_backprop.shape[2])
+    k[1] = np.tile(k[1], outputs_backprop.shape[1])
+    outputs_backprop = np.reshape(outputs_backprop,
+                                  (in_shape[0], -1, filters.shape[3]))
 
-    for h in range(grad.shape[1]):
-      for w in range(grad.shape[2]):
-        for i in range(grad.shape[3]):
-          for j in range(grad.shape[4]):
-            grad[:, h, w, i, j] = 0
-            # TODO: replace for k1, k2 with fancy indexing
-            # with for k in nd.index and slice(None) at
-            # first position, and matmul
-            for k1 in range(outputs_backprop.shape[1]):
-              for k2 in range(outputs_backprop.shape[2]):
-                grad[:, h, w, i, j] += np.dot(
-                    outputs_backprop[:, k1, k2, j],
-                    inputs[:, h + k1 * strides[1], w + k2 * strides[2], i])
+    # compute gradient
+    grad = np.empty((inputs.shape[0], ) + filters.shape, dtype=filters.dtype)
+    for i in range(grad.shape[1]):
+      for j in range(grad.shape[2]):
+        for m in range(grad.shape[3]):
+          rec_field = inputs[:, i + k[0], j + k[1], m]
+          rec_field = np.reshape(rec_field, (in_shape[0], -1, 1))
+          grad[:, i, j, m, :] = np.sum(rec_field * outputs_backprop, axis=1)
+    grad *= in_shape[0]
 
     return grad
 
