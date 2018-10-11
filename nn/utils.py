@@ -17,7 +17,7 @@ class conv2d:
 
     if self._padding == 'same':
       # tf-like padding
-      # heigh padding
+      # height padding
       if (in_shape[1] % strides[1] == 0):
         pad_along_height = max(filters.shape[0] - strides[1], 0)
       else:
@@ -66,9 +66,55 @@ class conv2d:
 
     return outputs
 
-  def grad(self, inputs, filters):
-    #TODO
-    pass
+  def backprop_filters(self, inputs, filters, outputs_backprop):
+    in_shape = inputs.shape
+    strides = self._strides
+
+    if self._padding == 'same':
+      # tf-like padding
+      # height padding
+      if (in_shape[1] % strides[1] == 0):
+        pad_along_height = max(filters.shape[0] - strides[1], 0)
+      else:
+        pad_along_height = max(filters.shape[0] - (in_shape[1] % strides[1]),
+                               0)
+
+      # width padding
+      if (in_shape[2] % strides[2] == 0):
+        pad_along_width = max(filters.shape[1] - strides[2], 0)
+      else:
+        pad_along_width = max(filters.shape[1] - (in_shape[2] % strides[2]), 0)
+
+      pad_top = pad_along_height // 2
+      pad_bottom = pad_along_height - pad_top
+      pad_left = pad_along_width // 2
+      pad_right = pad_along_width - pad_left
+
+      # pad input
+      inputs = np.pad(inputs, ((0, 0), ((pad_top, pad_bottom)),
+                               (pad_left, pad_right), (0, 0)), 'constant')
+
+    # empty gradient
+    grad = np.empty((inputs.shape[0], ) + filters.shape, dtype=filters.dtype)
+
+    for h in range(grad.shape[1]):
+      for w in range(grad.shape[2]):
+        for i in range(grad.shape[3]):
+          for j in range(grad.shape[4]):
+            grad[:, h, w, i, j] = 0
+            # TODO: replace for k1, k2 with fancy indexing
+            # with for k in nd.index and slice(None) at
+            # first position, and matmul
+            for k1 in range(outputs_backprop.shape[1]):
+              for k2 in range(outputs_backprop.shape[2]):
+                grad[:, h, w, i, j] += np.dot(
+                    outputs_backprop[:, k1, k2, j],
+                    inputs[:, h + k1 * strides[1], w + k2 * strides[2], i])
+
+    return grad
+
+  def backprop_inputs(self, inputs, filters):
+    raise NotImplementedError()
 
 
 class _functor:
@@ -116,8 +162,7 @@ class softmax(_functor):
 
   @staticmethod
   def grad(x, axis=-1):
-    #TODO
-    pass
+    raise NotImplementedError()
 
 
 class softmax_cross_entropy_with_logits(_functor):
