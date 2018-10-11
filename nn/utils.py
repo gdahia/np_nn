@@ -130,7 +130,28 @@ class conv2d:
     return grad
 
   def backprop_inputs(self, inputs, weights, outputs_backprop):
-    raise NotImplementedError()
+    filters = weights
+    in_shape = inputs.shape
+    strides = np.array(self._strides[1:3])
+
+    # TODO: make it faster with indexing somehow
+    # TODO: fix for 'SAME' padding. what prob is wrong is that
+    # we are considering padding as valid input area, when it
+    # is not. this means that these regions should not be propagated
+    # and their outputs should not count as normal ones
+    grad = np.zeros_like(inputs)
+    for j in range(in_shape[0]):
+      for c in np.ndindex(outputs_backprop.shape[1:3]):
+        for m in range(in_shape[3]):
+          for k in np.ndindex(filters.shape[:2]):
+            index = c * strides + k
+            if np.all(0 <= index) and np.all(index < grad.shape[1:3]):
+              for i in range(filters.shape[3]):
+                grad[j, index[0], index[1],
+                     m] += filters[k[0], k[1], m,
+                                   i] * outputs_backprop[j, c[0], c[1], i]
+
+    return grad
 
 
 class linear:
