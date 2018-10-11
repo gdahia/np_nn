@@ -3,6 +3,7 @@ import numpy as np
 
 class conv2d:
   def __init__(self, strides, padding='valid'):
+    padding = padding.lower()
     if padding != 'valid' and padding != 'same':
       raise NotImplementedError('padding should be either "valid" or "same".')
     self._padding = padding
