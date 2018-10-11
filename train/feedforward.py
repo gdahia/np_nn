@@ -109,7 +109,7 @@ if __name__ == '__main__':
       default=1e-2,
       type=float,
       help='initial learning rate')
-  parser.add_argument('--momentum', default=0, type=float)
+  parser.add_argument('--momentum', default=0.9, type=float)
   parser.add_argument(
       '--steps', default=10000, type=int, help='training steps')
   parser.add_argument(

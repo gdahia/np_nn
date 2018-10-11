@@ -21,13 +21,15 @@ def load_train_data(path, image_dtype=np.float32):
 
 def load_test_data(path, image_dtype=np.float32):
   images = []
+  names = []
   for filename in os.listdir(path):
     image_path = os.path.join(path, filename)
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
     image = np.array(image, dtype=image_dtype) / 255
     images.append(image)
+    names.append(filename)
 
-  return np.array(images, dtype=image_dtype)
+  return np.array(images, dtype=image_dtype), names
 
 
 def labels2int(labels):
