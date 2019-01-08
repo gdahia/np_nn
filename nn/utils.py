@@ -33,28 +33,7 @@ class conv2d:
     strides = self._strides
 
     if self._padding == 'same':
-      # tf-like padding
-      # height padding
-      if (in_shape[1] % strides[1] == 0):
-        pad_along_height = max(filters.shape[0] - strides[1], 0)
-      else:
-        pad_along_height = max(filters.shape[0] - (in_shape[1] % strides[1]),
-                               0)
-
-      # width padding
-      if (in_shape[2] % strides[2] == 0):
-        pad_along_width = max(filters.shape[1] - strides[2], 0)
-      else:
-        pad_along_width = max(filters.shape[1] - (in_shape[2] % strides[2]), 0)
-
-      pad_top = pad_along_height // 2
-      pad_bottom = pad_along_height - pad_top
-      pad_left = pad_along_width // 2
-      pad_right = pad_along_width - pad_left
-
-      # pad input
-      inputs = np.pad(inputs, ((0, 0), ((pad_top, pad_bottom)),
-                               (pad_left, pad_right), (0, 0)), 'constant')
+      inputs = same_padding(inputs, strides, filters.shape)
 
       # empty output
       out_height = (in_shape[1] + strides[1] - 1) // strides[1]
@@ -86,29 +65,9 @@ class conv2d:
     in_shape = inputs.shape
     strides = self._strides
 
+    # pad, if necessary
     if self._padding == 'same':
-      # tf-like padding
-      # height padding
-      if (in_shape[1] % strides[1] == 0):
-        pad_along_height = max(filters.shape[0] - strides[1], 0)
-      else:
-        pad_along_height = max(filters.shape[0] - (in_shape[1] % strides[1]),
-                               0)
-
-      # width padding
-      if (in_shape[2] % strides[2] == 0):
-        pad_along_width = max(filters.shape[1] - strides[2], 0)
-      else:
-        pad_along_width = max(filters.shape[1] - (in_shape[2] % strides[2]), 0)
-
-      pad_top = pad_along_height // 2
-      pad_bottom = pad_along_height - pad_top
-      pad_left = pad_along_width // 2
-      pad_right = pad_along_width - pad_left
-
-      # pad input
-      inputs = np.pad(inputs, ((0, 0), ((pad_top, pad_bottom)),
-                               (pad_left, pad_right), (0, 0)), 'constant')
+      inputs = same_padding(inputs, strides, filters.shape)
 
     # prepare indices and outputs_backprop for efficient computation
     k = [strides[i] * np.arange(outputs_backprop.shape[i]) for i in (1, 2)]
@@ -276,3 +235,31 @@ def get_fans(shape):
   fan_in = shape[0] if len(shape) == 2 else np.prod(shape[1:])
   fan_out = shape[1] if len(shape) == 2 else shape[0]
   return fan_in, fan_out
+
+
+def same_padding(inputs, strides, filters_shape):
+  in_shape = inputs.shape
+
+  # tf-like padding
+  # height padding
+  if (in_shape[1] % strides[1] == 0):
+    pad_along_height = max(filters_shape[0] - strides[1], 0)
+  else:
+    pad_along_height = max(filters_shape[0] - (in_shape[1] % strides[1]), 0)
+
+  # width padding
+  if (in_shape[2] % strides[2] == 0):
+    pad_along_width = max(filters_shape[1] - strides[2], 0)
+  else:
+    pad_along_width = max(filters_shape[1] - (in_shape[2] % strides[2]), 0)
+
+  pad_top = pad_along_height // 2
+  pad_bottom = pad_along_height - pad_top
+  pad_left = pad_along_width // 2
+  pad_right = pad_along_width - pad_left
+
+  # pad input
+  inputs = np.pad(inputs, ((0, 0), ((pad_top, pad_bottom)),
+                           (pad_left, pad_right), (0, 0)), 'constant')
+
+  return inputs
