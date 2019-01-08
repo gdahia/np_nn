@@ -26,31 +26,43 @@ def main():
   # create model
   print('Initializing model...')
   model = nn.models.Feedforward(
-      units_ls=[len(data.labels)],
+      W_ls=[(np.prod(data.input_shape), len(data.labels))],
+      ops=[nn.matmul],
       activation_fns=[nn.linear],
       loss_fn=nn.softmax_cross_entropy_with_logits,
-      input_dims=np.prod(data.input_shape),
+      optimizer=nn.optimizer.Momentum,
       infer_fns=[nn.softmax])
   print('Done')
 
   # initial learning rate
   learning_rate = nn.linear_decay(FLAGS.learning_rate,
                                   FLAGS.learning_rate / 100, 5000)
+  momentum = nn.linear_decay(FLAGS.momentum, 1.05 * FLAGS.momentum, 5000)
 
   # early stopping vars
   best_model = None
   best_accuracy = 0
   faults = 0
 
+  def preprocess(inputs, batch_size=FLAGS.batch_size):
+    return np.reshape(inputs, (batch_size, -1))
+
   # train
   print('Training...')
   for step in range(1, FLAGS.steps + 1):
     # sample batch
     images, labels = data.train.next_batch(FLAGS.batch_size)
+
+    # adjust images, labels to net
+    images = preprocess(images)
     labels = nn.one_hot(labels, depth=len(data.labels))
 
     # train step
-    loss = model.train(images, labels, learning_rate(step))
+    loss = model.train(
+        images,
+        labels,
+        learning_rate=learning_rate(step),
+        momentum=momentum(step))
 
     # print loss
     if step % FLAGS.loss_steps == 0:
@@ -58,7 +70,8 @@ def main():
 
     # validate
     if step % FLAGS.val_steps == 0:
-      accuracy = validate.accuracy(data.val, model, FLAGS.batch_size)
+      accuracy = validate.accuracy(data.val, model, FLAGS.batch_size,
+                                   preprocess)
       print('Accuracy = {}'.format(accuracy))
 
       # early stopping
@@ -103,6 +116,7 @@ if __name__ == '__main__':
       default=1e-1,
       type=float,
       help='initial learning rate')
+  parser.add_argument('--momentum', default=0.9, type=float)
   parser.add_argument(
       '--steps', default=10000, type=int, help='training steps')
   parser.add_argument(
