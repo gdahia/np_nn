@@ -5,24 +5,38 @@ import gzip
 import struct
 
 
-def download_mnist_file(path):
+def download_mnist_file(path, save_path):
+  print('Donwloading {}...'.format(path))
   url = os.path.join('http://yann.lecun.com/exdb/mnist', path)
-  filename, _ = urllib.request.urlretrieve(url)
-  return filename
+  urllib.request.urlretrieve(url, save_path)
+  print('Done')
 
 
 def load_mnist_split(name):
+  # download images, if not yet downloaded
+  images_filename = '{}-images-idx3-ubyte.gz'.format(name)
+  images_path = os.path.join('data', 'mnist', images_filename)
+  if not os.path.exists(images_path):
+    # create mnist data folder
+    if not os.path.exists(os.path.join('data', 'mnist')):
+      os.makedirs(os.path.join('data', 'mnist'))
+    download_mnist_file(images_filename, images_path)
+
   # get images
-  images_filename = download_mnist_file('{}-images-idx3-ubyte.gz'.format(name))
-  with gzip.open(images_filename, 'rb') as f:
+  with gzip.open(images_path, 'rb') as f:
     magic, size = struct.unpack(">II", f.read(8))
     nrows, ncols = struct.unpack(">II", f.read(8))
     data = np.frombuffer(f.read(), dtype=np.dtype(np.uint8).newbyteorder('>'))
     images = data.reshape((size, nrows, ncols))
 
+  # download labels, if not yet downloaded
+  labels_filename = '{}-labels-idx1-ubyte.gz'.format(name)
+  labels_path = os.path.join('data', 'mnist', labels_filename)
+  if not os.path.exists(labels_path):
+    download_mnist_file(labels_filename, labels_path)
+
   # get labels
-  labels_filename = download_mnist_file('{}-labels-idx1-ubyte.gz'.format(name))
-  with gzip.open(labels_filename, 'rb') as f:
+  with gzip.open(labels_path, 'rb') as f:
     magic, size = struct.unpack(">II", f.read(8))
     data = np.frombuffer(f.read(), dtype=np.dtype(np.uint8).newbyteorder('>'))
     labels = data.reshape((size, ))
