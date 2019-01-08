@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def accuracy(dataset, model, batch_size):
+def accuracy(dataset, model, batch_size, preprocess):
   total = 0
   correct = 0
   current_epoch = dataset.epochs
@@ -10,11 +10,12 @@ def accuracy(dataset, model, batch_size):
   while dataset.epochs == current_epoch:
     # sample batch
     inputs, labels = dataset.next_batch(batch_size, incomplete=True)
-    inputs = np.reshape(inputs, (batch_size, -1))
+    inputs = preprocess(inputs)
 
     # predict outputs for inputs
     scores = model.infer(inputs)
-    preds = np.argmax(scores, axis=1)
+    preds = np.argmax(scores, axis=-1)
+    preds = np.reshape(preds, np.shape(labels))
 
     # update statistics
     total += len(inputs)

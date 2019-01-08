@@ -46,6 +46,9 @@ def main():
   best_accuracy = 0
   faults = 0
 
+  def preprocess(inputs):
+    return np.reshape(inputs, (FLAGS.batch_size, -1))
+
   # train
   print('Training...')
   for step in range(1, FLAGS.steps + 1):
@@ -53,7 +56,7 @@ def main():
     images, labels = data.train.next_batch(FLAGS.batch_size)
 
     # adjust images, labels to net
-    images = np.reshape(images, (FLAGS.batch_size, -1))
+    images = preprocess(images)
     labels = nn.one_hot(labels, depth=len(data.labels))
 
     # train step
@@ -69,7 +72,8 @@ def main():
 
     # validate
     if step % FLAGS.val_steps == 0:
-      accuracy = validate.accuracy(data.val, model, FLAGS.batch_size)
+      accuracy = validate.accuracy(data.val, model, FLAGS.batch_size,
+                                   preprocess)
       print('Accuracy = {}'.format(accuracy))
 
       # early stopping
