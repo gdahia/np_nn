@@ -130,7 +130,7 @@ class Feedforward(NeuralNet):
 
       # continue backprop
       grad = ops[i - 1].backprop_inputs(
-          inputs=hiddens[i - 2], weights=W_ls[i - 1], outputs_backprop=grad)
+          inputs=hiddens[i - 1], weights=W_ls[i - 1], outputs_backprop=grad)
 
     return list(reversed(grads))
 
