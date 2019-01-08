@@ -46,7 +46,7 @@ def main():
   best_accuracy = 0
   faults = 0
 
-  def preprocess(inputs):
+  def preprocess(inputs, batch_size=FLAGS.batch_size):
     inputs = [cv2.resize(input_, (17, 17)) for input_ in inputs]
     inputs = np.expand_dims(inputs, -1)
     return inputs

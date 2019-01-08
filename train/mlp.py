@@ -46,8 +46,8 @@ def main():
   best_accuracy = 0
   faults = 0
 
-  def preprocess(inputs):
-    return np.reshape(inputs, (FLAGS.batch_size, -1))
+  def preprocess(inputs, batch_size=FLAGS.batch_size):
+    return np.reshape(inputs, (batch_size, -1))
 
   # train
   print('Training...')

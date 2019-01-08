@@ -10,7 +10,7 @@ def accuracy(dataset, model, batch_size, preprocess):
   while dataset.epochs == current_epoch:
     # sample batch
     inputs, labels = dataset.next_batch(batch_size, incomplete=True)
-    inputs = preprocess(inputs)
+    inputs = preprocess(inputs, inputs.shape[0])
 
     # predict outputs for inputs
     scores = model.infer(inputs)
