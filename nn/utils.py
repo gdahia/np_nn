@@ -51,8 +51,9 @@ class conv2d:
     flat_filters = np.reshape(filters, (-1, filters.shape[-1]))
     for i in range(outputs.shape[1]):
       for j in range(outputs.shape[2]):
-        rec_field = inputs[:, strides[1] * i:strides[1] * i + filters.shape[0],
-                           strides[2] * j:strides[2] * j + filters.shape[1], :]
+        rec_field = inputs[:, strides[1] * i:strides[1] * i +
+                           filters.shape[0], strides[2] * j:strides[2] * j +
+                           filters.shape[1], :]
         rec_field = np.reshape(rec_field, (in_shape[0], -1))
 
         outputs[:, i, j, :] = np.dot(rec_field, flat_filters)
@@ -94,6 +95,7 @@ class conv2d:
     strides = np.array(self._strides[1:3])
 
     # TODO: make it faster with indexing somehow
+
     # TODO: fix for 'SAME' padding. what prob is wrong is that
     # we are considering padding as valid input area, when it
     # is not. this means that these regions should not be propagated
@@ -106,9 +108,8 @@ class conv2d:
             index = c * strides + k
             if np.all(0 <= index) and np.all(index < grad.shape[1:3]):
               for i in range(filters.shape[3]):
-                grad[j, index[0], index[1],
-                     m] += filters[k[0], k[1], m,
-                                   i] * outputs_backprop[j, c[0], c[1], i]
+                grad[j, index[0], index[1], m] += filters[
+                    k[0], k[1], m, i] * outputs_backprop[j, c[0], c[1], i]
 
     return grad
 

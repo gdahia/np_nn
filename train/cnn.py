@@ -26,11 +26,10 @@ def main():
 
   # create model
   print('Initializing model...')
-  kernels = [(3, 3, 2**(i - 1), 2**i) for i in range(1, 6)]
-  kernels += [(3, 3, 2**len(kernels), len(data.labels))]
+  kernels = [(3, 3, 1, 16), (3, 3, 16, 32), (3, 3, 32, len(data.labels))]
   model = nn.models.Feedforward(
       W_ls=kernels,
-      ops=[nn.conv2d(strides=(1, 2, 2, 1), padding='same')] * len(kernels),
+      ops=[nn.conv2d(strides=(1, 2, 2, 1), padding='valid')] * len(kernels),
       activation_fns=([nn.relu] * (len(kernels) - 1)) + [nn.linear],
       loss_fn=nn.softmax_cross_entropy_with_logits,
       optimizer=nn.optimizer.Momentum,
@@ -118,7 +117,7 @@ if __name__ == '__main__':
   parser.add_argument('--batch_size', default=8, type=int, help='batch size')
   parser.add_argument(
       '--learning_rate',
-      default=1e-2,
+      default=1e-3,
       type=float,
       help='initial learning rate')
   parser.add_argument('--momentum', default=0.9, type=float)
