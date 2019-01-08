@@ -1,41 +1,33 @@
 import os
 import numpy as np
-import cv2
+import urllib.request
+import gzip
+import struct
 
 
-def load_train_data(path, image_dtype=np.float32):
-  images = []
-  labels = []
-  for label in os.listdir(path):
-    label_dir_path = os.path.join(path, label)
-    for filename in os.listdir(label_dir_path):
-      image_path = os.path.join(label_dir_path, filename)
-      image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-      image = np.array(image, dtype=image_dtype) / 255
-
-      images.append(image)
-      labels.append(label)
-
-  return np.array(images, dtype=image_dtype), labels
+def download_mnist_file(path):
+  url = os.path.join('http://yann.lecun.com/exdb/mnist', path)
+  filename, _ = urllib.request.urlretrieve(url)
+  return filename
 
 
-def load_test_data(path, image_dtype=np.float32):
-  images = []
-  names = []
-  for filename in os.listdir(path):
-    image_path = os.path.join(path, filename)
-    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-    image = np.array(image, dtype=image_dtype) / 255
-    images.append(image)
-    names.append(filename)
+def load_mnist_split(name):
+  # get images
+  images_filename = download_mnist_file('{}-images-idx3-ubyte.gz'.format(name))
+  with gzip.open(images_filename, 'rb') as f:
+    magic, size = struct.unpack(">II", f.read(8))
+    nrows, ncols = struct.unpack(">II", f.read(8))
+    data = np.frombuffer(f.read(), dtype=np.dtype(np.uint8).newbyteorder('>'))
+    images = data.reshape((size, nrows, ncols))
 
-  return np.array(images, dtype=image_dtype), names
+  # get labels
+  labels_filename = download_mnist_file('{}-labels-idx1-ubyte.gz'.format(name))
+  with gzip.open(labels_filename, 'rb') as f:
+    magic, size = struct.unpack(">II", f.read(8))
+    data = np.frombuffer(f.read(), dtype=np.dtype(np.uint8).newbyteorder('>'))
+    labels = data.reshape((size, ))
 
-
-def labels2int(labels):
-  label2int = {label: i for i, label in enumerate(np.unique(labels))}
-  labels = np.array([label2int[label] for label in labels])
-  return labels
+  return images, labels
 
 
 def shuffle(instances, labels):
@@ -61,20 +53,5 @@ def split(instances, labels, split):
   return (train_instances, train_labels), (val_instances, val_labels)
 
 
-def dataset_exists(index):
-  return os.path.exists(dataset_path(index))
-
-
-def dataset_path(index):
-  dataset_path = os.path.join('data', 'data_part{}'.format(index))
-  return dataset_path
-
-
-def download_and_extract_dataset(index):
-  import urllib.request
-  import tarfile
-
-  url = 'https://maups.github.io/tcv3/data_part{}.tar.bz2'.format(index)
-  filename, _ = urllib.request.urlretrieve(url)
-  tar = tarfile.open(name=filename)
-  tar.extractall(path='data')
+def has_mnist():
+  return os.path.exists(os.path.join('data', 'mnist'))

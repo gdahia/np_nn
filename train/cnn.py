@@ -4,7 +4,6 @@ import numpy as np
 import cv2
 import copy
 
-import utils
 import nn
 import dataset
 import validate
@@ -13,15 +12,9 @@ FLAGS = None
 
 
 def main():
-  # download dataset if it does not exist
-  if not utils.dataset_exists(FLAGS.dataset):
-    print('Donwloading and extracting dataset {}...'.format(FLAGS.dataset))
-    utils.download_and_extract_dataset(FLAGS.dataset)
-    print('Done')
-
   # load dataset
-  print('Loading dataset...')
-  data = dataset.Handler(utils.dataset_path(FLAGS.dataset), 0.8)
+  print('Loading MNIST dataset...')
+  data = dataset.MNIST(split=0.8)
   print('Done')
 
   # create model
@@ -112,8 +105,6 @@ def main():
 if __name__ == '__main__':
   # parse arguments
   parser = argparse.ArgumentParser()
-  parser.add_argument(
-      '--dataset', required=True, type=int, help='index of dataset to use')
   parser.add_argument('--batch_size', default=8, type=int, help='batch size')
   parser.add_argument(
       '--learning_rate',
