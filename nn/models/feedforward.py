@@ -118,8 +118,10 @@ class Feedforward(NeuralNet):
     for i in range(len(activations) - 1, 0, -1):
       # compute and store bias gradient
       grad *= fns[i - 1].grad(activations[i])
-      axes = [axis for axis in range(len(activations[i].shape) - 1)]
-      db = np.mean(grad, axis=tuple(axes))
+      bgrad = grad
+      if len(activations[i].shape) > 2:
+        bgrad = np.sum(bgrad, axis=(1, 2))
+      db = np.mean(bgrad, axis=0)
 
       # compute and store weights gradient
       dW = ops[i - 1].backprop_weights(
